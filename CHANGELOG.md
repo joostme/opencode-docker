@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 1.0.2
+
+### Patch Changes
+
+- 8e35ce2: Remove unnecessary dev depcs in docker image. Fix UID/GID handling with existing groups
+
 ## 1.0.1
 
 ### Patch Changes
