@@ -1,4 +1,5 @@
 .env
+node_modules/
 repos/
 skills/
 data/

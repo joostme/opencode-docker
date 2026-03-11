@@ -156,6 +156,18 @@ docker compose build \
 
 By default, both pull the latest release.
 
+## Releases
+
+This repo uses [Changesets](https://github.com/changesets/changesets) for release management.
+
+The intended flow is:
+
+1. Add a changeset for each user-visible change with `npm run changeset`
+2. Merge your work into `main`
+3. The release workflow opens or updates a release PR with version bumps and changelog updates
+4. Review and merge that release PR when you're ready to ship
+5. Merging the release PR creates the GitHub Release and publishes the matching Docker image to GHCR
+
 ## Troubleshooting
 
 **Mise tools compiling from source?** You're likely on Alpine or a musl-based image. This setup uses `debian:bookworm-slim` specifically to get prebuilt glibc binaries. If you've changed the base image, switch back.
