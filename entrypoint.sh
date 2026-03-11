@@ -9,21 +9,26 @@ PGID=${PGID:-1000}
 OPENCODE_PORT=${OPENCODE_PORT:-4096}
 CODE_SERVER_PORT=${CODE_SERVER_PORT:-8080}
 HOME_DIR="/home/opencode"
+RUN_AS="${PUID}:${PGID}"
 
 # ---------------------------------------------------------------------------
 # User & group setup
 # ---------------------------------------------------------------------------
 setup_user() {
-    if ! getent group opencode > /dev/null 2>&1; then
-        groupadd -g "${PGID}" opencode
-    else
+    if getent group "${PGID}" > /dev/null 2>&1; then
+        echo "Using existing group with GID ${PGID}"
+    elif getent group opencode > /dev/null 2>&1; then
         groupmod -g "${PGID}" opencode
+    else
+        groupadd -g "${PGID}" opencode
     fi
 
-    if ! id opencode > /dev/null 2>&1; then
-        useradd -u "${PUID}" -g opencode -d "${HOME_DIR}" -s /bin/bash opencode
-    else
+    if id -u "${PUID}" > /dev/null 2>&1; then
+        echo "Using existing user with UID ${PUID}"
+    elif id opencode > /dev/null 2>&1; then
         usermod -u "${PUID}" -g "${PGID}" opencode
+    else
+        useradd -u "${PUID}" -g "${PGID}" -d "${HOME_DIR}" -s /bin/bash opencode
     fi
 }
 
@@ -47,14 +52,14 @@ create_directories() {
 # File ownership
 # ---------------------------------------------------------------------------
 fix_ownership() {
-    chown opencode:opencode "${HOME_DIR}"
-    chown -R opencode:opencode \
+    chown "${PUID}:${PGID}" "${HOME_DIR}"
+    chown -R "${PUID}:${PGID}" \
         "${HOME_DIR}/.ssh" \
         "${HOME_DIR}/.local"
-    chown -R opencode:opencode /repos
+    chown -R "${PUID}:${PGID}" /repos
 
     # Config dirs — own the dirs themselves, skip read-only mounted files
-    chown opencode:opencode \
+    chown "${PUID}:${PGID}" \
         "${HOME_DIR}/.config" \
         "${HOME_DIR}/.config/opencode" \
         "${HOME_DIR}/.config/mise"
@@ -94,7 +99,7 @@ SSHEOF
 # ---------------------------------------------------------------------------
 setup_git() {
     # Trust all directories (single-purpose container; all code is under /repos)
-    gosu opencode git config --global --add safe.directory '*'
+    gosu "${RUN_AS}" git config --global --add safe.directory '*'
 }
 
 # ---------------------------------------------------------------------------
@@ -105,7 +110,7 @@ setup_mise() {
 
     if [ -f "${HOME_DIR}/.config/mise/config.toml" ]; then
         echo "Installing mise tools from config..."
-        gosu opencode mise install --yes 2>&1
+        gosu "${RUN_AS}" mise install --yes 2>&1
         echo "Mise tools installed."
     fi
 
@@ -124,7 +129,7 @@ start_code_server() {
     [ -n "${cs_password}" ] && cs_auth="password"
 
     echo "Starting code-server on port ${CODE_SERVER_PORT} (auth=${cs_auth})..."
-    gosu opencode env \
+    gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
         PASSWORD="${cs_password}" \
@@ -144,7 +149,7 @@ start_code_server() {
 start_opencode() {
     # Using "serve" instead of "web" to avoid xdg-open browser attempt in a container.
     echo "Starting opencode serve on port ${OPENCODE_PORT}..."
-    gosu opencode env \
+    gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
         opencode serve \
