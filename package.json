@@ -1,7 +1,7 @@
 {
   "name": "opencode-docker",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Release metadata and automation config for the opencode-docker image",
   "scripts": {
     "changeset": "changeset",
