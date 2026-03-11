@@ -1,0 +1,91 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "server": {
+    "port": 4096,
+    "hostname": "0.0.0.0"
+  },
+  "permission": {
+    "*": "ask",
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "/home/opencode/.ssh/*": "deny",
+      "/home/opencode/.local/share/opencode/auth.json": "deny",
+      "*.pem": "deny",
+      "*.key": "deny",
+      "*credentials*": "deny",
+      "*secret*": "deny"
+    },
+    "edit": "allow",
+    "write": "allow",
+    "webfetch": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "bash": {
+      "*": "ask",
+      "git *": "allow",
+      "npm *": "allow",
+      "npx *": "allow",
+      "pnpm *": "allow",
+      "yarn *": "allow",
+      "bun *": "allow",
+      "node *": "allow",
+      "go *": "allow",
+      "python *": "allow",
+      "pip *": "allow",
+      "cargo *": "allow",
+      "rustc *": "allow",
+      "mise *": "allow",
+      "make *": "allow",
+      "cat *": "allow",
+      "ls *": "allow",
+      "find *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow",
+      "sort *": "allow",
+      "uniq *": "allow",
+      "grep *": "allow",
+      "rg *": "allow",
+      "sed *": "allow",
+      "awk *": "allow",
+      "jq *": "allow",
+      "curl *": "allow",
+      "wget *": "allow",
+      "mkdir *": "allow",
+      "cp *": "allow",
+      "mv *": "allow",
+      "touch *": "allow",
+      "echo *": "allow",
+      "pwd": "allow",
+      "env": "allow",
+      "which *": "allow",
+      "diff *": "allow",
+      "patch *": "allow",
+      "tar *": "allow",
+      "unzip *": "allow",
+      "docker *": "deny",
+      "sudo *": "deny",
+      "su *": "deny",
+      "chmod 777 *": "deny",
+      "curl * | bash": "deny",
+      "curl * | sh": "deny",
+      "wget * | bash": "deny",
+      "wget * | sh": "deny"
+    },
+    "external_directory": "deny"
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
+      },
+      "enabled": true
+    }
+  },
+  "autoupdate": false
+}

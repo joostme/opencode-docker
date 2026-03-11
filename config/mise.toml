@@ -1,0 +1,10 @@
+# Mise tool configuration for opencode-docker
+# Edit this file to add/remove/change tool versions.
+# Changes take effect on container restart.
+# See https://mise.jdx.dev for all available tools.
+
+[tools]
+node = "22"
+go = "1.24"
+python = "3.13"
+rust = "1.85"
