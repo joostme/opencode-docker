@@ -86,7 +86,12 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 4096 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -sf http://localhost:${OPENCODE_PORT:-4096}/health || exit 1
+    CMD if [ -n "${OPENCODE_SERVER_PASSWORD}" ]; then \
+            curl -sf -u "${OPENCODE_SERVER_USERNAME:-opencode}:${OPENCODE_SERVER_PASSWORD}" \
+                http://localhost:${OPENCODE_PORT:-4096}/health; \
+        else \
+            curl -sf http://localhost:${OPENCODE_PORT:-4096}/health; \
+        fi || exit 1
 
 WORKDIR /repos
 
