@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 1.0.3
+
+### Patch Changes
+
+- 30a25e5: Fix user/group ids below 1000. Fix healthcheck with password
+
 ## 1.0.2
 
 ### Patch Changes
