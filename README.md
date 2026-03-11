@@ -31,8 +31,8 @@ cp .env.example .env
 # 4. Create the required directories
 mkdir -p repos data skills
 
-# 5. Build and start
-docker compose up -d --build
+# 5. Start the published image
+docker compose up -d
 
 # 6. Check logs
 docker compose logs -f
@@ -166,8 +166,7 @@ The intended flow is:
 2. Merge your work into `main`
 3. The release workflow opens or updates a release PR with version bumps and changelog updates
 4. Review and merge that release PR when you're ready to ship
-5. Merging the release PR creates the GitHub Release
-6. Publishing the GitHub Release triggers `.github/workflows/publish-image.yml`, which publishes the matching Docker image to GHCR
+5. Merging the release PR creates the GitHub Release and publishes the matching Docker image to GHCR
 
 ## Troubleshooting
 

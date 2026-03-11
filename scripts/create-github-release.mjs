@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
@@ -6,12 +6,26 @@ const version = pkg.version;
 const tag = `v${version}`;
 const repository = process.env.GITHUB_REPOSITORY;
 const sha = process.env.GITHUB_SHA;
+const githubOutput = process.env.GITHUB_OUTPUT;
 
 if (!repository || !sha) {
   throw new Error("GITHUB_REPOSITORY and GITHUB_SHA must be set");
 }
 
 const image = `ghcr.io/${repository.toLowerCase()}`;
+
+function setOutput(name, value) {
+  if (!githubOutput) {
+    return;
+  }
+
+  appendFileSync(githubOutput, `${name}=${value}\n`);
+}
+
+setOutput("created", "false");
+setOutput("version", version);
+setOutput("tag", tag);
+setOutput("image", image);
 
 function extractLatestReleaseNotes() {
   if (!existsSync("CHANGELOG.md")) {
@@ -78,3 +92,5 @@ execFileSync(
   ],
   { stdio: "inherit" }
 );
+
+setOutput("created", "true");
