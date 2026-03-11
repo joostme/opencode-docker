@@ -15,12 +15,23 @@ RUN_AS="${PUID}:${PGID}"
 # User & group setup
 # ---------------------------------------------------------------------------
 setup_user() {
+    local groupadd_args=""
+    local useradd_args=""
+
+    if [ "${PGID}" -lt 1000 ]; then
+        groupadd_args="--system"
+    fi
+
+    if [ "${PUID}" -lt 1000 ]; then
+        useradd_args="--system"
+    fi
+
     if getent group "${PGID}" > /dev/null 2>&1; then
         echo "Using existing group with GID ${PGID}"
     elif getent group opencode > /dev/null 2>&1; then
         groupmod -g "${PGID}" opencode
     else
-        groupadd -g "${PGID}" opencode
+        groupadd ${groupadd_args} -g "${PGID}" opencode
     fi
 
     if id -u "${PUID}" > /dev/null 2>&1; then
@@ -28,7 +39,7 @@ setup_user() {
     elif id opencode > /dev/null 2>&1; then
         usermod -u "${PUID}" -g "${PGID}" opencode
     else
-        useradd -u "${PUID}" -g "${PGID}" -d "${HOME_DIR}" -s /bin/bash opencode
+        useradd ${useradd_args} -u "${PUID}" -g "${PGID}" -d "${HOME_DIR}" -s /bin/bash opencode
     fi
 }
 
