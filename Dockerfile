@@ -3,8 +3,6 @@ FROM debian:bookworm-slim
 # ---------------------------------------------------------------------------
 # 1. System packages (rarely changes — cached aggressively)
 # ---------------------------------------------------------------------------
-# Split into two layers: core runtime vs build/dev libraries.
-# Core runtime changes almost never; build deps may be tweaked more often.
 
 # Core runtime tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,19 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gosu \
     openssh-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Build tools & Python build dependencies (for native npm modules, mise python-build, etc.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libffi-dev \
-    libssl-dev \
-    zlib1g-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libncurses-dev \
-    liblzma-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # CLI utilities commonly used by agents and developers
