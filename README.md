@@ -91,3 +91,9 @@ ports:
 - SSH access not working: verify `SSH_KEY_PATH` and confirm the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
 - Toolchains reinstalling or changing: check `config/mise.toml` and restart the container
+
+## Upstream updates
+
+- `Dockerfile` pins both `CODE_SERVER_VERSION` and `OPENCODE_VERSION`, so image builds stay reproducible instead of silently pulling `latest`
+- `renovate.json` teaches Renovate to watch `coder/code-server` and `anomalyco/opencode` releases and open PRs when either pinned version can be bumped
+- Enable the Renovate app or runner for this repository to start receiving update PRs automatically

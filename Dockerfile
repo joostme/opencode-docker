@@ -31,16 +31,11 @@ RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 # ---------------------------------------------------------------------------
 # 3. code-server (own layer — version changes independently)
 # ---------------------------------------------------------------------------
-ARG CODE_SERVER_VERSION=latest
+# renovate: datasource=github-releases depName=coder/code-server
+ARG CODE_SERVER_VERSION=4.111.0
 RUN ARCH=$(dpkg --print-architecture) && \
-    if [ "${CODE_SERVER_VERSION}" = "latest" ]; then \
-        CS_VERSION=$(curl -fsSL https://api.github.com/repos/coder/code-server/releases/latest \
-            | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/'); \
-    else \
-        CS_VERSION="${CODE_SERVER_VERSION#v}"; \
-    fi && \
-    URL="https://github.com/coder/code-server/releases/download/v${CS_VERSION}/code-server_${CS_VERSION}_${ARCH}.deb" && \
-    echo "Downloading code-server v${CS_VERSION} from ${URL}" && \
+    URL="https://github.com/coder/code-server/releases/download/v${CODE_SERVER_VERSION}/code-server_${CODE_SERVER_VERSION}_${ARCH}.deb" && \
+    echo "Downloading code-server v${CODE_SERVER_VERSION} from ${URL}" && \
     curl -fsSL -o /tmp/code-server.deb "${URL}" && \
     dpkg -i /tmp/code-server.deb && \
     rm /tmp/code-server.deb && \
@@ -49,18 +44,15 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # ---------------------------------------------------------------------------
 # 4. opencode (own layer — most likely to change across rebuilds)
 # ---------------------------------------------------------------------------
-ARG OPENCODE_VERSION=latest
+# renovate: datasource=github-releases depName=anomalyco/opencode
+ARG OPENCODE_VERSION=1.2.24
 RUN ARCH=$(dpkg --print-architecture) && \
     case "${ARCH}" in \
         amd64) OC_ARCH="x64" ;; \
         arm64) OC_ARCH="arm64" ;; \
         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
     esac && \
-    if [ "${OPENCODE_VERSION}" = "latest" ]; then \
-        URL="https://github.com/anomalyco/opencode/releases/latest/download/opencode-linux-${OC_ARCH}.tar.gz"; \
-    else \
-        URL="https://github.com/anomalyco/opencode/releases/download/${OPENCODE_VERSION}/opencode-linux-${OC_ARCH}.tar.gz"; \
-    fi && \
+    URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-${OC_ARCH}.tar.gz" && \
     echo "Downloading opencode from ${URL}" && \
     curl -fsSL "${URL}" | tar xz -C /usr/local/bin opencode && \
     chmod +x /usr/local/bin/opencode && \
