@@ -312,6 +312,7 @@ start_opencode() {
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
+        SHELL="/bin/zsh" \
         ZDOTDIR="${ZSH_CONFIG_DIR}" \
         ZSH="${OH_MY_ZSH_DIR}" \
         opencode serve \
