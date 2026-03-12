@@ -7,6 +7,7 @@ This setup is meant for people who want a browser-based AI coding agent and VS C
 ## What you get
 
 - OpenCode web UI and code-server from one container
+- GitHub CLI available in the container for `gh` commands
 - Shared `/repos` workspace between both apps
 - Persistent OpenCode data, toolchains, and VS Code extensions
 - Traefik-ready HTTPS routing for separate subdomains
@@ -21,6 +22,7 @@ You need:
 - At least one LLM provider API key such as `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `GEMINI_API_KEY`
 - A server or machine where the container can keep running
 - Traefik with a `proxy` network if you want the included domain-based routing
+- Optional: `GH_TOKEN` or `GITHUB_TOKEN` if you want `gh` pre-authenticated
 
 ## Quick start
 
@@ -57,6 +59,7 @@ After startup:
 | `CODE_SERVER_DOMAIN` | Domain for code-server |
 | `CERT_RESOLVER` | Traefik certificate resolver |
 | `SSH_KEY_PATH` | Host path to SSH keys |
+| `GH_TOKEN` / `GITHUB_TOKEN` | Optional token for GitHub CLI and API access |
 
 See `.env.example` for the full list.
 
@@ -66,6 +69,8 @@ See `.env.example` for the full list.
 - `./config` -> full `~/.config` persistence including OpenCode config, installed skills, and mise config
 - `./share` -> full `~/.local/share` persistence including OpenCode data, code-server data, and mise installs
 - `./agents` -> compatibility config and skills for tools that use `~/.agents`
+
+GitHub CLI auth also persists under `./config` when you log in with `gh auth login` inside the container.
 
 ## Security notes
 
@@ -90,9 +95,10 @@ ports:
 - SSH access not working: verify `SSH_KEY_PATH` and confirm the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
+- GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
 
 ## Upstream updates
 
-- `Dockerfile` pins both `CODE_SERVER_VERSION` and `OPENCODE_VERSION`, so image builds stay reproducible instead of silently pulling `latest`
-- `renovate.json` teaches Renovate to watch `coder/code-server` and `anomalyco/opencode` releases and open PRs when either pinned version can be bumped
+- `Dockerfile` pins `GH_VERSION`, `CODE_SERVER_VERSION`, and `OPENCODE_VERSION`, so image builds stay reproducible instead of silently pulling `latest`
+- `renovate.json` teaches Renovate to watch `cli/cli`, `coder/code-server`, and `anomalyco/opencode` releases and open PRs when any pinned version can be bumped
 - Enable the Renovate app or runner for this repository to start receiving update PRs automatically
