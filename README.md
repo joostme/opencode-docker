@@ -1,15 +1,17 @@
 # opencode-docker
 
-Run [OpenCode](https://opencode.ai) and [code-server](https://github.com/coder/code-server) in one Docker container, with a shared filesystem and persistent data.
+Run [OpenCode](https://opencode.ai), [code-server](https://github.com/coder/code-server), and a Playwright MCP browser sidecar with a shared filesystem and persistent data.
 
 This setup is meant for people who want a browser-based AI coding agent and VS Code always available on a VPS or home server.
 
 ## What you get
 
 - OpenCode web UI and code-server from one container
+- Playwright MCP sidecar for browser automation from the agent
 - GitHub CLI available in the container for `gh` commands
 - Shared `/repos` workspace between both apps
 - Persistent OpenCode data, toolchains, and VS Code extensions
+- Prewired MCP config for Context7 and Playwright
 - Traefik-ready HTTPS routing for separate subdomains
 - SSH key mounting for private Git access
 - Preconfigured safeguards that block OpenCode from reading common secret files
@@ -40,6 +42,8 @@ Then edit `.env` and set at least:
 - `ANTHROPIC_API_KEY` or another supported provider key
 - `OPENCODE_DOMAIN` and `CODE_SERVER_DOMAIN` if you are using Traefik
 - `SSH_KEY_PATH` if your SSH keys are not in `~/.ssh`
+
+The included OpenCode config already points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
 
 After startup:
 
@@ -77,7 +81,15 @@ GitHub CLI auth also persists under `./config` when you log in with `gh auth log
 - This setup is intended for personal use, not multi-tenant hosting
 - OpenCode is configured to deny reads for files such as `.env`, SSH keys, `*.pem`, and `*.key`
 - SSH keys are mounted read-only and copied into the container at startup with the correct permissions
+- Playwright MCP runs as a separate internal service and is only exposed on the private Compose network by default
 - If both `OPENCODE_SERVER_PASSWORD` and `CODE_SERVER_PASSWORD` are empty, code-server can run without auth
+
+## Browser automation
+
+- The stack now includes a `playwright-mcp` service using `mcr.microsoft.com/playwright/mcp`
+- OpenCode is preconfigured to connect to it through MCP at `http://playwright-mcp:8931/mcp`
+- The current container setup uses headless Chromium with `--no-sandbox`, matching the documented Docker usage for Playwright MCP
+- If you need a different image tag, set `PLAYWRIGHT_MCP_IMAGE` in `.env`
 
 ## Without Traefik
 
@@ -94,6 +106,7 @@ ports:
 - Permission errors on mounted folders: set `PUID` and `PGID` to match your host user
 - SSH access not working: verify `SSH_KEY_PATH` and confirm the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
+- Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
 
