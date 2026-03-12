@@ -43,20 +43,32 @@ setup_user() {
     fi
 }
 
-# ---------------------------------------------------------------------------
-# Directory structure
-# ---------------------------------------------------------------------------
-create_directories() {
-    mkdir -p \
-        "${HOME_DIR}/.config/opencode/skills" \
-        "${HOME_DIR}/.config/mise" \
-        "${HOME_DIR}/.ssh" \
-        "${HOME_DIR}/.local/share/opencode" \
-        "${HOME_DIR}/.local/share/mise" \
-        "${HOME_DIR}/.local/share/code-server" \
-        "${HOME_DIR}/.local/state/opencode" \
-        "${HOME_DIR}/.local/state/mise" \
-        /repos
+chown_tree_if_exists() {
+    for path in "$@"; do
+        if [ -e "${path}" ]; then
+            chown -R "${PUID}:${PGID}" "${path}"
+        fi
+    done
+}
+
+chown_path_if_dir() {
+    for path in "$@"; do
+        if [ -d "${path}" ]; then
+            chown "${PUID}:${PGID}" "${path}"
+        fi
+    done
+}
+
+append_file_block_if_missing() {
+    local file="$1"
+    local marker="$2"
+    local block="$3"
+
+    touch "${file}"
+
+    if ! grep -Fq "${marker}" "${file}"; then
+        printf '\n%s\n' "${block}" >> "${file}"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -64,13 +76,17 @@ create_directories() {
 # ---------------------------------------------------------------------------
 fix_ownership() {
     chown "${PUID}:${PGID}" "${HOME_DIR}"
-    chown -R "${PUID}:${PGID}" \
+    chown_tree_if_exists \
+        "${HOME_DIR}/.bash_profile" \
+        "${HOME_DIR}/.bashrc" \
+        "${HOME_DIR}/.profile" \
+        "${HOME_DIR}/.agents" \
         "${HOME_DIR}/.ssh" \
         "${HOME_DIR}/.local"
-    chown -R "${PUID}:${PGID}" /repos
+    chown_tree_if_exists /repos
 
-    # Config dirs — own the dirs themselves, skip read-only mounted files
-    chown "${PUID}:${PGID}" \
+    # Own config directories themselves without touching mounted files.
+    chown_path_if_dir \
         "${HOME_DIR}/.config" \
         "${HOME_DIR}/.config/opencode" \
         "${HOME_DIR}/.config/mise"
@@ -80,6 +96,8 @@ fix_ownership() {
 # SSH keys & config
 # ---------------------------------------------------------------------------
 setup_ssh() {
+    mkdir -p "${HOME_DIR}/.ssh"
+
     # Copy keys from read-only mount into writable .ssh directory
     if [ -d "${HOME_DIR}/.ssh-keys" ]; then
         cp -a "${HOME_DIR}/.ssh-keys/." "${HOME_DIR}/.ssh/" 2>/dev/null || true
@@ -128,6 +146,43 @@ setup_mise() {
     # Add mise shims to PATH so opencode's bash tool can find installed runtimes
     MISE_SHIMS="${HOME_DIR}/.local/share/mise/shims"
     export PATH="${MISE_SHIMS}:${PATH}"
+}
+
+# ---------------------------------------------------------------------------
+# Shell environment
+# ---------------------------------------------------------------------------
+setup_shell_env() {
+    local marker="# opencode-docker mise setup"
+    local profile_block
+    local bashrc_block
+    local bash_profile_block
+
+    profile_block=$(cat <<'EOF'
+# opencode-docker mise setup
+eval "$(mise activate bash --shims)"
+EOF
+)
+
+    bashrc_block=$(cat <<'EOF'
+# opencode-docker mise setup
+eval "$(mise activate bash)"
+EOF
+)
+
+    bash_profile_block=$(cat <<'EOF'
+# opencode-docker mise setup
+if [ -f "/home/opencode/.profile" ]; then
+    . "/home/opencode/.profile"
+fi
+if [ -f "/home/opencode/.bashrc" ]; then
+    . "/home/opencode/.bashrc"
+fi
+EOF
+)
+
+    append_file_block_if_missing "${HOME_DIR}/.profile" "${marker}" "${profile_block}"
+    append_file_block_if_missing "${HOME_DIR}/.bashrc" "${marker}" "${bashrc_block}"
+    append_file_block_if_missing "${HOME_DIR}/.bash_profile" "${marker}" "${bash_profile_block}"
 }
 
 # ---------------------------------------------------------------------------
@@ -188,8 +243,9 @@ echo "  OpenCode port=${OPENCODE_PORT}"
 echo "  code-server port=${CODE_SERVER_PORT}"
 
 setup_user
-create_directories
+mkdir -p /repos
 setup_ssh
+setup_shell_env
 fix_ownership
 setup_git
 setup_mise

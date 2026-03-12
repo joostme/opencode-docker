@@ -28,7 +28,7 @@ You need:
 git clone <your-repo-url> opencode-docker
 cd opencode-docker
 cp .env.example .env
-mkdir -p repos data skills
+mkdir -p repos share agents config/mise config/opencode
 docker compose up -d
 ```
 
@@ -63,10 +63,9 @@ See `.env.example` for the full list.
 ## Persistent data
 
 - `./repos` -> your repositories
-- `./data` -> OpenCode conversations and app data
-- `./skills` -> OpenCode skills
-- `mise-data` -> installed toolchains
-- `code-server-data` -> VS Code extensions and settings
+- `./config` -> full `~/.config` persistence including OpenCode config, installed skills, and mise config
+- `./share` -> full `~/.local/share` persistence including OpenCode data, code-server data, and mise installs
+- `./agents` -> compatibility config and skills for tools that use `~/.agents`
 
 ## Security notes
 
@@ -90,7 +89,7 @@ ports:
 - Permission errors on mounted folders: set `PUID` and `PGID` to match your host user
 - SSH access not working: verify `SSH_KEY_PATH` and confirm the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
-- Toolchains reinstalling or changing: check `config/mise.toml` and restart the container
+- Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 
 ## Upstream updates
 
