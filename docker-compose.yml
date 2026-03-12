@@ -32,6 +32,7 @@ services:
       # SSH keys for git access (mounted read-only, copied into .ssh at startup)
       - ${SSH_KEY_PATH:-~/.ssh}:/home/opencode/.ssh-keys:ro
     networks:
+      - backend
       - proxy
     labels:
       - traefik.enable=true
@@ -55,6 +56,25 @@ services:
     ports:
       - "${OPENCODE_PORT:-4096}:${OPENCODE_PORT:-4096}"
       - "${CODE_SERVER_PORT:-8080}:${CODE_SERVER_PORT:-8080}"
+
+  playwright-mcp:
+    image: ${PLAYWRIGHT_MCP_IMAGE:-mcr.microsoft.com/playwright/mcp:latest}
+    container_name: playwright-mcp
+    restart: unless-stopped
+    command:
+      - /ms-playwright/mcp/cli.js
+      - --headless
+      - --browser
+      - chromium
+      - --no-sandbox
+      - --port
+      - "8931"
+      - --host
+      - 0.0.0.0
+    networks:
+      - backend
+
 networks:
+  backend:
   proxy:
     external: true

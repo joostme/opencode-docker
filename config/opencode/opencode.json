@@ -6,6 +6,10 @@
   },
   "permission": {
     "*": "ask",
+    "todoread": "allow",
+    "todowrite": "allow",
+    "task": "allow",
+    "context7_*": "allow",
     "read": {
       "*": "allow",
       "*.env": "deny",
@@ -26,6 +30,7 @@
     "bash": {
       "*": "ask",
       "git *": "allow",
+      "gh *": "allow",
       "npm *": "allow",
       "npx *": "allow",
       "pnpm *": "allow",
@@ -84,6 +89,11 @@
       "headers": {
         "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}"
       },
+      "enabled": true
+    },
+    "playwright": {
+      "type": "remote",
+      "url": "http://playwright-mcp:8931/mcp",
       "enabled": true
     }
   },
