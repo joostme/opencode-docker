@@ -10,6 +10,7 @@
     "todowrite": "allow",
     "task": "allow",
     "context7_*": "allow",
+    "playwright_*": "allow",
     "read": {
       "*": "allow",
       "*.env": "deny",
@@ -29,6 +30,15 @@
     "grep": "allow",
     "bash": {
       "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git show*": "allow",
+      "git branch*": "allow",
+      "git rev-parse*": "allow",
+      "git remote -v*": "allow",
+      "git ls-files*": "allow",
+      "git blame*": "allow",
       "docker *": "deny",
       "sudo *": "deny",
       "su *": "deny",
