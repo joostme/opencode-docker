@@ -72,7 +72,7 @@ services:
       - --host
       - 0.0.0.0
       - --allowed-hosts
-      - playwright-mcp,localhost,127.0.0.1
+      - "*"
     networks:
       - backend
 
