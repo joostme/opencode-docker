@@ -1,5 +1,15 @@
 # opencode-docker
 
+## 2.1.0
+
+### Minor Changes
+
+- c559b7c: Switch the internal terminals to `zsh`, bootstrap Oh My Zsh automatically, and persist zsh/Oh My Zsh configuration under the mounted `./config` directory so custom plugins and themes survive container rebuilds and reruns.
+- bfd9c12: Add the GitHub CLI to the Docker image so `gh` commands are available in the terminal and to agents, and document optional `GH_TOKEN` / `GITHUB_TOKEN` authentication for container startup.
+- b328ac6: Add a bundled Playwright MCP sidecar and prewire OpenCode to connect to it for browser automation out of the box.
+
+  Relax the bundled OpenCode permissions so todo tools, Context7 usage, subagents, and GitHub CLI commands can run without repeated approval prompts.
+
 ## 2.0.0
 
 ### Major Changes
