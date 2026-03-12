@@ -29,7 +29,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 
 # ---------------------------------------------------------------------------
-# 3. code-server (own layer — version changes independently)
+# 3. GitHub CLI (own layer — version changes independently)
+# ---------------------------------------------------------------------------
+# renovate: datasource=github-releases depName=cli/cli
+ARG GH_VERSION=2.74.2
+RUN ARCH=$(dpkg --print-architecture) && \
+    URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.deb" && \
+    echo "Downloading GitHub CLI v${GH_VERSION} from ${URL}" && \
+    curl -fsSL -o /tmp/gh.deb "${URL}" && \
+    dpkg -i /tmp/gh.deb && \
+    rm /tmp/gh.deb && \
+    gh --version
+
+# ---------------------------------------------------------------------------
+# 4. code-server (own layer — version changes independently)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=coder/code-server
 ARG CODE_SERVER_VERSION=4.111.0
@@ -42,7 +55,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
     code-server --version
 
 # ---------------------------------------------------------------------------
-# 4. opencode (own layer — most likely to change across rebuilds)
+# 5. opencode (own layer — most likely to change across rebuilds)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=anomalyco/opencode
 ARG OPENCODE_VERSION=1.2.24
@@ -59,7 +72,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
     opencode --version
 
 # ---------------------------------------------------------------------------
-# 5. Environment defaults (directories are created by entrypoint.sh)
+# 6. Environment defaults (directories are created by entrypoint.sh)
 # ---------------------------------------------------------------------------
 ENV PUID=1000 \
     PGID=1000 \
@@ -67,13 +80,13 @@ ENV PUID=1000 \
     CODE_SERVER_PORT=8080
 
 # ---------------------------------------------------------------------------
-# 6. Entrypoint (changes most often during development)
+# 7. Entrypoint (changes most often during development)
 # ---------------------------------------------------------------------------
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # ---------------------------------------------------------------------------
-# 7. Metadata
+# 8. Metadata
 # ---------------------------------------------------------------------------
 EXPOSE 4096 8080
 

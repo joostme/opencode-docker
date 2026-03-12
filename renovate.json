@@ -4,6 +4,15 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "Track pinned GitHub CLI version in Dockerfile",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG GH_VERSION=(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
       "description": "Track pinned code-server version in Dockerfile",
       "managerFilePatterns": ["/^Dockerfile$/"],
       "matchStrings": [
@@ -22,6 +31,12 @@
     }
   ],
   "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["cli/cli"],
+      "commitMessageTopic": "GitHub CLI",
+      "labels": ["dependencies", "docker"]
+    },
     {
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["coder/code-server"],
