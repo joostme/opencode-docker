@@ -9,6 +9,9 @@ PGID=${PGID:-1000}
 OPENCODE_PORT=${OPENCODE_PORT:-4096}
 CODE_SERVER_PORT=${CODE_SERVER_PORT:-8080}
 HOME_DIR="/home/opencode"
+CONFIG_DIR="${HOME_DIR}/.config"
+ZSH_CONFIG_DIR="${CONFIG_DIR}/zsh"
+OH_MY_ZSH_DIR="${CONFIG_DIR}/oh-my-zsh"
 RUN_AS="${PUID}:${PGID}"
 
 # ---------------------------------------------------------------------------
@@ -37,9 +40,13 @@ setup_user() {
     if id -u "${PUID}" > /dev/null 2>&1; then
         echo "Using existing user with UID ${PUID}"
     elif id opencode > /dev/null 2>&1; then
-        usermod -u "${PUID}" -g "${PGID}" opencode
+        usermod -u "${PUID}" -g "${PGID}" -s /bin/zsh opencode
     else
-        useradd ${useradd_args} -u "${PUID}" -g "${PGID}" -d "${HOME_DIR}" -s /bin/bash opencode
+        useradd ${useradd_args} -u "${PUID}" -g "${PGID}" -d "${HOME_DIR}" -s /bin/zsh opencode
+    fi
+
+    if id opencode > /dev/null 2>&1; then
+        usermod -s /bin/zsh opencode
     fi
 }
 
@@ -80,6 +87,9 @@ fix_ownership() {
         "${HOME_DIR}/.bash_profile" \
         "${HOME_DIR}/.bashrc" \
         "${HOME_DIR}/.profile" \
+        "${HOME_DIR}/.zshenv" \
+        "${HOME_DIR}/.zprofile" \
+        "${HOME_DIR}/.zshrc" \
         "${HOME_DIR}/.agents" \
         "${HOME_DIR}/.ssh" \
         "${HOME_DIR}/.local"
@@ -87,9 +97,11 @@ fix_ownership() {
 
     # Own config directories themselves without touching mounted files.
     chown_path_if_dir \
-        "${HOME_DIR}/.config" \
-        "${HOME_DIR}/.config/opencode" \
-        "${HOME_DIR}/.config/mise"
+        "${CONFIG_DIR}" \
+        "${CONFIG_DIR}/opencode" \
+        "${CONFIG_DIR}/mise" \
+        "${ZSH_CONFIG_DIR}" \
+        "${OH_MY_ZSH_DIR}"
 }
 
 # ---------------------------------------------------------------------------
@@ -153,9 +165,16 @@ setup_mise() {
 # ---------------------------------------------------------------------------
 setup_shell_env() {
     local marker="# opencode-docker mise setup"
+    local zsh_env_marker="# opencode-docker zsh env"
+    local zsh_marker="# opencode-docker zsh setup"
     local profile_block
     local bashrc_block
     local bash_profile_block
+    local zshenv_block
+    local zprofile_block
+    local zshrc_block
+
+    mkdir -p "${ZSH_CONFIG_DIR}"
 
     profile_block=$(cat <<'EOF'
 # opencode-docker mise setup
@@ -180,9 +199,82 @@ fi
 EOF
 )
 
+    zshenv_block=$(cat <<'EOF'
+# opencode-docker zsh env
+export ZDOTDIR="$HOME/.config/zsh"
+export ZSH="$HOME/.config/oh-my-zsh"
+EOF
+)
+
+    zprofile_block=$(cat <<'EOF'
+# opencode-docker mise setup
+if [ -f "/home/opencode/.profile" ]; then
+    . "/home/opencode/.profile"
+fi
+EOF
+)
+
+    zshrc_block=$(cat <<'EOF'
+# opencode-docker zsh setup
+export ZSH="$HOME/.config/oh-my-zsh"
+ZSH_THEME="robbyrussell"
+plugins=(git)
+DISABLE_AUTO_UPDATE="true"
+source "$ZSH/oh-my-zsh.sh"
+eval "$(mise activate zsh)"
+EOF
+)
+
     append_file_block_if_missing "${HOME_DIR}/.profile" "${marker}" "${profile_block}"
     append_file_block_if_missing "${HOME_DIR}/.bashrc" "${marker}" "${bashrc_block}"
     append_file_block_if_missing "${HOME_DIR}/.bash_profile" "${marker}" "${bash_profile_block}"
+    append_file_block_if_missing "${HOME_DIR}/.zshenv" "${zsh_env_marker}" "${zshenv_block}"
+    append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zprofile" "${marker}" "${zprofile_block}"
+    append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zshrc" "${zsh_marker}" "${zshrc_block}"
+}
+
+# ---------------------------------------------------------------------------
+# Oh My Zsh
+# ---------------------------------------------------------------------------
+setup_oh_my_zsh() {
+    mkdir -p "${OH_MY_ZSH_DIR}"
+
+    if [ ! -d "${OH_MY_ZSH_DIR}/.git" ]; then
+        echo "Installing Oh My Zsh into ${OH_MY_ZSH_DIR}..."
+        rm -rf "${OH_MY_ZSH_DIR}"
+        gosu "${RUN_AS}" env \
+            HOME="${HOME_DIR}" \
+            ZSH="${OH_MY_ZSH_DIR}" \
+            CHSH=no \
+            RUNZSH=no \
+            KEEP_ZSHRC=yes \
+            sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        echo "Oh My Zsh installed."
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# code-server settings
+# ---------------------------------------------------------------------------
+setup_code_server_settings() {
+    local settings_dir="${HOME_DIR}/.local/share/code-server/User"
+    local settings_file="${settings_dir}/settings.json"
+    local tmp_file
+
+    mkdir -p "${settings_dir}"
+
+    if [ ! -f "${settings_file}" ]; then
+        printf '{}\n' > "${settings_file}"
+    fi
+
+    tmp_file=$(mktemp)
+    jq '
+        .["terminal.integrated.profiles.linux"].zsh = {
+            "path": "/bin/zsh"
+        }
+        | .["terminal.integrated.defaultProfile.linux"] = "zsh"
+    ' "${settings_file}" > "${tmp_file}"
+    mv "${tmp_file}" "${settings_file}"
 }
 
 # ---------------------------------------------------------------------------
@@ -198,6 +290,8 @@ start_code_server() {
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
+        ZDOTDIR="${ZSH_CONFIG_DIR}" \
+        ZSH="${OH_MY_ZSH_DIR}" \
         PASSWORD="${cs_password}" \
         code-server \
         --bind-addr "0.0.0.0:${CODE_SERVER_PORT}" \
@@ -218,6 +312,8 @@ start_opencode() {
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
+        ZDOTDIR="${ZSH_CONFIG_DIR}" \
+        ZSH="${OH_MY_ZSH_DIR}" \
         opencode serve \
         --port "${OPENCODE_PORT}" \
         --hostname 0.0.0.0 &
@@ -246,7 +342,9 @@ setup_user
 mkdir -p /repos
 setup_ssh
 setup_shell_env
+setup_code_server_settings
 fix_ownership
+setup_oh_my_zsh
 setup_git
 setup_mise
 

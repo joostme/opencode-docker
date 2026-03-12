@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gosu \
     openssh-client \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # CLI utilities commonly used by agents and developers
