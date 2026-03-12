@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track pinned code-server version in Dockerfile",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG CODE_SERVER_VERSION=(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
+      "description": "Track pinned OpenCode version in Dockerfile",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG OPENCODE_VERSION=(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "semver-coerced"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["coder/code-server"],
+      "commitMessageTopic": "code-server",
+      "labels": ["dependencies", "docker"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["anomalyco/opencode"],
+      "commitMessageTopic": "OpenCode",
+      "labels": ["dependencies", "docker"]
+    }
+  ]
+}
