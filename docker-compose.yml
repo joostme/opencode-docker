@@ -20,20 +20,14 @@ services:
     volumes:
       # Repos directory - your code lives here
       - ./repos:/repos
-      # OpenCode data (sessions, conversations, database)
-      - ./data:/home/opencode/.local/share/opencode
-      # OpenCode global config
-      - ./config/opencode.json:/home/opencode/.config/opencode/opencode.json:ro
-      # OpenCode skills directory
-      - ./skills:/home/opencode/.config/opencode/skills:ro
+      # User share directory for OpenCode, code-server, and mise
+      - ./share:/home/opencode/.local/share
+      # Agent-compatible config and skills
+      - ./agents:/home/opencode/.agents
+      # User config directory for OpenCode, mise, and related tools
+      - ./config:/home/opencode/.config
       # SSH keys for git access (mounted read-only, copied into .ssh at startup)
       - ${SSH_KEY_PATH:-~/.ssh}:/home/opencode/.ssh-keys:ro
-      # Mise config - define your toolchains here
-      - ./config/mise.toml:/home/opencode/.config/mise/config.toml:ro
-      # Mise cache - persists installed toolchains across container restarts
-      - mise-data:/home/opencode/.local/share/mise
-      # code-server data (extensions, settings) - persisted across restarts
-      - code-server-data:/home/opencode/.local/share/code-server
     networks:
       - proxy
     labels:
@@ -58,11 +52,6 @@ services:
     ports:
       - "${OPENCODE_PORT:-4096}:${OPENCODE_PORT:-4096}"
       - "${CODE_SERVER_PORT:-8080}:${CODE_SERVER_PORT:-8080}"
-
-volumes:
-  mise-data:
-  code-server-data:
-
 networks:
   proxy:
     external: true
