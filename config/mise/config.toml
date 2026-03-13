@@ -3,6 +3,9 @@
 # Changes take effect on container restart.
 # See https://mise.jdx.dev for all available tools.
 
+[env]
+MY_SECRET = { value = "s3cr3t", redact = true, required = "This secret can be used by opencode skills" }
+
 [tools]
 node = "22"
 go = "1.24"
