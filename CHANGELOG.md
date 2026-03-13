@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 2.1.1
+
+### Patch Changes
+
+- d6f5dbc: Set `SHELL=/bin/zsh` when starting the OpenCode web server so server-run shell commands follow the container user's configured zsh shell instead of falling back to bash.
+
 ## 2.1.0
 
 ### Minor Changes
