@@ -98,7 +98,8 @@
     },
     "external_directory": {
       "*": "ask",
-      "/repos/**": "allow"
+      "/repos/**": "allow",
+      "/home/opencode/.agents/skills/**": "allow"
     }
   },
   "mcp": {
