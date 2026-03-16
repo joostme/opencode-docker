@@ -8,6 +8,6 @@ MY_SECRET = { value = "s3cr3t", redact = true, required = "This secret can be us
 
 [tools]
 node = "22"
-go = "1.24"
+go = "1.26.1"
 python = "3.13"
 rust = "1.85"
