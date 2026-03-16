@@ -140,7 +140,9 @@ SSHEOF
 # ---------------------------------------------------------------------------
 setup_git() {
     # Trust all directories (single-purpose container; all code is under /repos)
-    gosu "${RUN_AS}" git config --global --add safe.directory '*'
+    if ! gosu "${RUN_AS}" git config --global --get-all safe.directory | grep -Fxq '*'; then
+        gosu "${RUN_AS}" git config --global --add safe.directory '*'
+    fi
 }
 
 # ---------------------------------------------------------------------------
