@@ -59,7 +59,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # 5. opencode (own layer — most likely to change across rebuilds)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=1.2.24
+ARG OPENCODE_VERSION=1.2.27
 RUN ARCH=$(dpkg --print-architecture) && \
     case "${ARCH}" in \
         amd64) OC_ARCH="x64" ;; \
