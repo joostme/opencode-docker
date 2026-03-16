@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 2.1.2
+
+### Patch Changes
+
+- 800b555: Update the bundled OpenCode dependency to the latest patch release.
+
 ## 2.1.1
 
 ### Patch Changes
