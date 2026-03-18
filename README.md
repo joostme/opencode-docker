@@ -6,7 +6,7 @@ This setup is meant for people who want a browser-based AI coding agent and VS C
 
 ## What you get
 
-- OpenCode web UI and code-server from one container
+- OpenCode web UI served directly by the bundled `opencode` binary and code-server from one container
 - Playwright MCP sidecar for browser automation from the agent
 - GitHub CLI available in the container for `gh` commands
 - Shared `/repos` workspace between both apps
@@ -44,6 +44,8 @@ Then edit `.env` and set at least:
 - `SSH_KEY_PATH` if your SSH keys are not in `~/.ssh`
 
 The included OpenCode config already points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
+
+The image now patches and builds OpenCode from source so the `opencode` binary embeds the upstream web UI bundle at compile time. That removes the runtime dependency on `app.opencode.ai` for the main web UI without needing a separate reverse proxy in the container.
 
 After startup:
 
@@ -101,6 +103,8 @@ ports:
   - "8080:8080"
 ```
 
+`4096` serves both the OpenCode API and the locally embedded web UI directly from the `opencode` process.
+
 ## Troubleshooting
 
 - Permission errors on mounted folders: set `PUID` and `PGID` to match your host user
@@ -109,6 +113,7 @@ ports:
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
+- OpenCode page still tries to reach the internet: rebuild the image so the patched OpenCode binary with embedded web assets is actually installed
 
 ## Upstream updates
 

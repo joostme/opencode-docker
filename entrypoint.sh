@@ -309,7 +309,6 @@ start_code_server() {
 # Start opencode
 # ---------------------------------------------------------------------------
 start_opencode() {
-    # Using "serve" instead of "web" to avoid xdg-open browser attempt in a container.
     echo "Starting opencode serve on port ${OPENCODE_PORT}..."
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
