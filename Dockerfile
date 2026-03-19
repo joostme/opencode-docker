@@ -93,8 +93,12 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # ---------------------------------------------------------------------------
 # 5. opencode (built from source with embedded web UI)
 # ---------------------------------------------------------------------------
-COPY --from=opencode-build /tmp/opencode-src/packages/opencode/dist/opencode-linux-x64/bin/opencode /usr/local/bin/opencode
-RUN chmod +x /usr/local/bin/opencode && opencode --version
+ARG TARGETARCH
+COPY --from=opencode-build /tmp/opencode-src/packages/opencode/dist/ /tmp/opencode-dist/
+RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "x64") && \
+    cp /tmp/opencode-dist/opencode-linux-${ARCH}/bin/opencode /usr/local/bin/opencode && \
+    rm -rf /tmp/opencode-dist && \
+    chmod +x /usr/local/bin/opencode && opencode --version
 
 # ---------------------------------------------------------------------------
 # 6. Environment defaults (directories are created by entrypoint.sh)
