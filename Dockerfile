@@ -1,4 +1,6 @@
+# renovate: datasource=github-releases depName=anomalyco/opencode
 ARG OPENCODE_VERSION=1.2.27
+# renovate: datasource=github-releases depName=oven-sh/bun
 ARG BUN_VERSION=1.3.10
 
 FROM oven/bun:${BUN_VERSION} AS opencode-build
@@ -32,8 +34,6 @@ RUN bun run --cwd packages/app build
 RUN bun run --cwd packages/opencode build --single --skip-install
 
 FROM debian:bookworm-slim
-
-ARG OPENCODE_VERSION
 
 # ---------------------------------------------------------------------------
 # 1. System packages (rarely changes — cached aggressively)
