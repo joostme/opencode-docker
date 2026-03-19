@@ -29,6 +29,15 @@
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG OPENCODE_VERSION=(?<currentValue>\\S+)"
       ],
       "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
+      "description": "Track pinned Bun version in Dockerfile",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+ARG BUN_VERSION=(?<currentValue>\\S+)"
+      ],
+      "versioningTemplate": "semver-coerced"
     }
   ],
   "packageRules": [
@@ -48,6 +57,12 @@
       "matchManagers": ["custom.regex"],
       "matchPackageNames": ["anomalyco/opencode"],
       "commitMessageTopic": "OpenCode",
+      "labels": ["dependencies", "docker"]
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["oven-sh/bun"],
+      "commitMessageTopic": "Bun",
       "labels": ["dependencies", "docker"]
     }
   ]
