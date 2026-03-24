@@ -1,7 +1,7 @@
 # renovate: datasource=github-releases depName=anomalyco/opencode
 ARG OPENCODE_VERSION=1.3.0
 # renovate: datasource=github-releases depName=oven-sh/bun
-ARG BUN_VERSION=1.3.10
+ARG BUN_VERSION=1.3.11
 
 FROM oven/bun:${BUN_VERSION} AS opencode-build
 
