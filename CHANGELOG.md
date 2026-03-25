@@ -1,5 +1,20 @@
 # opencode-docker
 
+## 2.2.2
+
+### Patch Changes
+
+- 067646f: Auto-update mise to the latest version on container startup.
+
+  The entrypoint now runs `mise self-update --yes` before installing user-defined
+  toolchains, so the container always picks up the latest mise release without
+  needing an image rebuild. A 24-hour staleness check (via a timestamp file in
+  `/tmp`) avoids redundant network calls on container restarts. If the update
+  fails (e.g. no internet), the container logs a warning and continues with the
+  version baked into the image.
+
+- 619bdce: Update the bundled OpenCode dependency from v1.3.0 to v1.3.2.
+
 ## 2.2.1
 
 ### Patch Changes
