@@ -151,6 +151,32 @@ setup_git() {
 setup_mise() {
     export HOME="${HOME_DIR}"
 
+    # Self-update mise to latest version (skip if updated within the last 24h)
+    local stamp="/tmp/.mise-last-update"
+    local now
+    now=$(date +%s)
+    local stale=true
+
+    if [ -f "${stamp}" ]; then
+        local last
+        last=$(cat "${stamp}" 2>/dev/null || echo 0)
+        if [ $((now - last)) -lt 86400 ]; then
+            stale=false
+        fi
+    fi
+
+    # Update the mise binary itself (runs as root because mise lives in /usr/local/bin)
+    if [ "${stale}" = true ]; then
+        echo "Checking for mise updates..."
+        if mise self-update --yes 2>&1; then
+            echo "${now}" > "${stamp}"
+            echo "mise is up to date: $(mise --version)"
+        else
+            echo "Warning: mise self-update failed, continuing with installed version."
+        fi
+    fi
+
+    # Install user-defined toolchains (Node, Python, etc.) from mise config
     if [ -f "${HOME_DIR}/.config/mise/config.toml" ]; then
         echo "Installing mise tools from config..."
         gosu "${RUN_AS}" mise install --yes 2>&1
