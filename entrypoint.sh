@@ -82,20 +82,13 @@ append_file_block_if_missing() {
 # File ownership
 # ---------------------------------------------------------------------------
 fix_ownership() {
-    chown "${PUID}:${PGID}" "${HOME_DIR}"
-    chown_tree_if_exists \
-        "${HOME_DIR}/.bash_profile" \
-        "${HOME_DIR}/.bashrc" \
-        "${HOME_DIR}/.profile" \
-        "${HOME_DIR}/.zshenv" \
-        "${HOME_DIR}/.zprofile" \
-        "${HOME_DIR}/.zshrc" \
-        "${HOME_DIR}/.agents" \
-        "${HOME_DIR}/.ssh" \
-        "${HOME_DIR}/.local"
+    # Recursively own everything under HOME, except .config contents
+    # (.config is bind-mounted and users may have specific ownership on files).
+    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" \
+        -exec chown -R "${PUID}:${PGID}" {} +
     chown_tree_if_exists /repos
 
-    # Own config directories themselves without touching mounted files.
+    # Own .config directories themselves without touching mounted files inside.
     chown_path_if_dir \
         "${CONFIG_DIR}" \
         "${CONFIG_DIR}/opencode" \
@@ -175,6 +168,10 @@ setup_mise() {
             echo "Warning: mise self-update failed, continuing with installed version."
         fi
     fi
+
+    # mise self-update runs as root and may create ~/.cache owned by root.
+    # Fix ownership so the unprivileged user can write to it later.
+    chown_tree_if_exists "${HOME_DIR}/.cache"
 
     # Install user-defined toolchains (Node, Python, etc.) from mise config
     if [ -f "${HOME_DIR}/.config/mise/config.toml" ]; then
