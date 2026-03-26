@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 2.2.4
+
+### Patch Changes
+
+- c04f74a: Skip recursive ownership changes on the read-only `.ssh-keys` mount during container startup. This prevents startup errors when SSH keys are mounted with `:ro` and still copies them into the writable `~/.ssh` directory for use inside the container.
+
 ## 2.2.3
 
 ### Patch Changes
