@@ -68,7 +68,7 @@ RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 # 3. GitHub CLI (own layer — version changes independently)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=cli/cli
-ARG GH_VERSION=2.88.1
+ARG GH_VERSION=2.89.0
 RUN ARCH=$(dpkg --print-architecture) && \
     URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.deb" && \
     echo "Downloading GitHub CLI v${GH_VERSION} from ${URL}" && \
