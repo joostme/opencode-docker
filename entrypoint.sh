@@ -82,9 +82,9 @@ append_file_block_if_missing() {
 # File ownership
 # ---------------------------------------------------------------------------
 fix_ownership() {
-    # Recursively own everything under HOME, except .config contents
-    # (.config is bind-mounted and users may have specific ownership on files).
-    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" \
+    # Recursively own everything under HOME, except bind-mounted config and
+    # read-only SSH key contents.
+    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" ! -name ".ssh-keys" \
         -exec chown -R "${PUID}:${PGID}" {} +
     chown_tree_if_exists /repos
 
