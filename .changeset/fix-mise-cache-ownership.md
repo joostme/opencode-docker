@@ -1,5 +1,5 @@
 ---
-"my-project": patch
+"opencode-docker": patch
 ---
 
 Fix `~/.cache` directory ownership after mise self-update.
