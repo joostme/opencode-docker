@@ -4,7 +4,8 @@
 # See https://mise.jdx.dev for all available tools.
 
 [env]
-MY_SECRET = { value = "s3cr3t", redact = true, required = "This secret can be used by opencode skills" }
+# Example: add environment variables for your tools or skills
+# MY_SECRET = { value = "s3cr3t", redact = true }
 
 [tools]
 node = "22"

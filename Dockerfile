@@ -39,24 +39,20 @@ FROM debian:bookworm-slim
 # 1. System packages (rarely changes — cached aggressively)
 # ---------------------------------------------------------------------------
 
-# Core runtime tools
+# Core runtime tools + CLI utilities commonly used by agents and developers
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
     curl \
     git \
     gosu \
-    openssh-client \
-    zsh \
-    && rm -rf /var/lib/apt/lists/*
-
-# CLI utilities commonly used by agents and developers
-RUN apt-get update && apt-get install -y --no-install-recommends \
     gzip \
     jq \
+    openssh-client \
     ripgrep \
     tar \
     unzip \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 .env
 node_modules/
 repos/
+share/
+agents/
 skills/
 data/

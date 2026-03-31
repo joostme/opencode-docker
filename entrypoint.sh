@@ -82,19 +82,26 @@ append_file_block_if_missing() {
 # File ownership
 # ---------------------------------------------------------------------------
 fix_ownership() {
-    # Recursively own everything under HOME, except bind-mounted config and
-    # read-only SSH key contents.
-    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" ! -name ".ssh-keys" \
+    # Own the home directory itself and top-level dotfiles/dirs the entrypoint
+    # creates (shell configs, .ssh, .cache, .local). Skip .config — it's
+    # bind-mounted and the user controls its contents.
+    chown "${PUID}:${PGID}" "${HOME_DIR}"
+    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" \
         -exec chown -R "${PUID}:${PGID}" {} +
-    chown_tree_if_exists /repos
 
-    # Own .config directories themselves without touching mounted files inside.
+    # Own .config directory containers themselves (not recursively — mounted
+    # files keep their host ownership).
     chown_path_if_dir \
         "${CONFIG_DIR}" \
         "${CONFIG_DIR}/opencode" \
         "${CONFIG_DIR}/mise" \
         "${ZSH_CONFIG_DIR}" \
         "${OH_MY_ZSH_DIR}"
+
+    # /repos: only fix the top-level directory so the user can write into it.
+    # Don't recurse — repos can be huge and the host already owns the files
+    # via PUID/PGID matching.
+    chown "${PUID}:${PGID}" /repos
 }
 
 # ---------------------------------------------------------------------------
