@@ -45,7 +45,7 @@ Then edit `.env` and set at least:
 
 The included OpenCode config already points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
 
-The image builds OpenCode from source so the bundled `opencode` binary includes the upstream web UI build flow directly. Recent OpenCode releases already support embedding the web UI, so this repo no longer carries a separate patch for that behavior.
+The image downloads the precompiled OpenCode release binary directly from GitHub. Recent OpenCode releases already support embedding the web UI, so this repo no longer needs either a custom patch or a local source build for normal image updates.
 
 After startup:
 
