@@ -1,39 +1,9 @@
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=1.3.2
-# renovate: datasource=github-releases depName=oven-sh/bun
-ARG BUN_VERSION=1.3.11
-
-FROM oven/bun:${BUN_VERSION} AS opencode-build
-
-ARG OPENCODE_VERSION
-
-WORKDIR /tmp/opencode-src
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    g++ \
-    git \
-    make \
-    python3 \
-    pkg-config \
-    unzip \
-    zip \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL "https://github.com/anomalyco/opencode/archive/refs/tags/v${OPENCODE_VERSION}.tar.gz" -o /tmp/opencode-src.tar.gz && \
-    tar -xzf /tmp/opencode-src.tar.gz -C /tmp/opencode-src --strip-components=1 && \
-    rm /tmp/opencode-src.tar.gz
-
-RUN mkdir -p packages/opencode/src/server
-COPY hack/opencode-embed-web-ui.patch /tmp/opencode-embed-web-ui.patch
-RUN git apply /tmp/opencode-embed-web-ui.patch
-
-RUN bun install --frozen-lockfile
-RUN bun run --cwd packages/app build
-RUN bun run --cwd packages/opencode build --single --skip-install
+ARG OPENCODE_VERSION=1.3.13
 
 FROM debian:bookworm-slim
+
+ARG OPENCODE_VERSION
 
 # ---------------------------------------------------------------------------
 # 1. System packages (rarely changes — cached aggressively)
@@ -87,13 +57,15 @@ RUN ARCH=$(dpkg --print-architecture) && \
     code-server --version
 
 # ---------------------------------------------------------------------------
-# 5. opencode (built from source with embedded web UI)
+# 5. opencode (precompiled upstream release binary)
 # ---------------------------------------------------------------------------
 ARG TARGETARCH
-COPY --from=opencode-build /tmp/opencode-src/packages/opencode/dist/ /tmp/opencode-dist/
 RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "x64") && \
-    cp /tmp/opencode-dist/opencode-linux-${ARCH}/bin/opencode /usr/local/bin/opencode && \
-    rm -rf /tmp/opencode-dist && \
+    URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-${ARCH}.tar.gz" && \
+    echo "Downloading OpenCode v${OPENCODE_VERSION} from ${URL}" && \
+    curl -fsSL -o /tmp/opencode.tar.gz "${URL}" && \
+    tar -xzf /tmp/opencode.tar.gz -C /usr/local/bin opencode && \
+    rm /tmp/opencode.tar.gz && \
     chmod +x /usr/local/bin/opencode && opencode --version
 
 # ---------------------------------------------------------------------------
