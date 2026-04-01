@@ -83,10 +83,10 @@ append_file_block_if_missing() {
 # ---------------------------------------------------------------------------
 fix_ownership() {
     # Own the home directory itself and top-level dotfiles/dirs the entrypoint
-    # creates (shell configs, .ssh, .cache, .local). Skip .config — it's
-    # bind-mounted and the user controls its contents.
+    # creates (shell configs, .ssh, .cache, .local). Skip bind mounts that may
+    # be read-only or intentionally host-owned.
     chown "${PUID}:${PGID}" "${HOME_DIR}"
-    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" \
+    find "${HOME_DIR}" -maxdepth 1 ! -path "${HOME_DIR}" ! -name ".config" ! -name ".ssh-keys" \
         -exec chown -R "${PUID}:${PGID}" {} +
 
     # Own .config directory containers themselves (not recursively — mounted
