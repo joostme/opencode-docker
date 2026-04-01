@@ -43,9 +43,7 @@ Then edit `.env` and set at least:
 - `OPENCODE_DOMAIN` and `CODE_SERVER_DOMAIN` if you are using Traefik
 - `SSH_KEY_PATH` if your SSH keys are not in `~/.ssh`
 
-The included OpenCode config already points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
-
-The image downloads the precompiled OpenCode release binary directly from GitHub. Recent OpenCode releases already support embedding the web UI, so this repo no longer needs either a custom patch or a local source build for normal image updates.
+The included OpenCode config points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
 
 After startup:
 
@@ -88,9 +86,9 @@ GitHub CLI auth also persists under `./config` when you log in with `gh auth log
 
 ## Browser automation
 
-- The stack now includes a `playwright-mcp` service using `mcr.microsoft.com/playwright/mcp`
+- The stack includes a `playwright-mcp` service using `mcr.microsoft.com/playwright/mcp`
 - OpenCode is preconfigured to connect to it through MCP at `http://playwright-mcp:8931/mcp`
-- The current container setup uses headless Chromium with `--no-sandbox`, matching the documented Docker usage for Playwright MCP
+- The container runs headless Chromium with `--no-sandbox`
 - If you need a different image tag, set `PLAYWRIGHT_MCP_IMAGE` in `.env`
 
 ## Without Traefik
@@ -113,7 +111,7 @@ ports:
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
-- OpenCode page still tries to reach the internet: rebuild the image so the latest bundled OpenCode binary is actually installed
+- OpenCode page still tries to reach the internet: rebuild the image and make sure the current OpenCode release binary is installed
 
 ## Upstream updates
 
