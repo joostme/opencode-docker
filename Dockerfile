@@ -25,12 +25,7 @@ RUN curl -fsSL "https://github.com/anomalyco/opencode/archive/refs/tags/v${OPENC
     tar -xzf /tmp/opencode-src.tar.gz -C /tmp/opencode-src --strip-components=1 && \
     rm /tmp/opencode-src.tar.gz
 
-RUN mkdir -p packages/opencode/src/server
-COPY hack/opencode-embed-web-ui.patch /tmp/opencode-embed-web-ui.patch
-RUN git apply /tmp/opencode-embed-web-ui.patch
-
 RUN bun install --frozen-lockfile
-RUN bun run --cwd packages/app build
 RUN bun run --cwd packages/opencode build --single --skip-install
 
 FROM debian:bookworm-slim

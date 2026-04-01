@@ -45,7 +45,7 @@ Then edit `.env` and set at least:
 
 The included OpenCode config already points to the Playwright MCP sidecar at `http://playwright-mcp:8931/mcp`, so browser automation is available as soon as the stack starts.
 
-The image now patches and builds OpenCode from source so the `opencode` binary embeds the upstream web UI bundle at compile time. That removes the runtime dependency on `app.opencode.ai` for the main web UI without needing a separate reverse proxy in the container.
+The image builds OpenCode from source so the bundled `opencode` binary includes the upstream web UI build flow directly. Recent OpenCode releases already support embedding the web UI, so this repo no longer carries a separate patch for that behavior.
 
 After startup:
 
@@ -103,7 +103,7 @@ ports:
   - "8080:8080"
 ```
 
-`4096` serves both the OpenCode API and the locally embedded web UI directly from the `opencode` process.
+`4096` serves both the OpenCode API and the web UI directly from the `opencode` process.
 
 ## Troubleshooting
 
@@ -113,7 +113,7 @@ ports:
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
-- OpenCode page still tries to reach the internet: rebuild the image so the patched OpenCode binary with embedded web assets is actually installed
+- OpenCode page still tries to reach the internet: rebuild the image so the latest bundled OpenCode binary is actually installed
 
 ## Upstream updates
 
