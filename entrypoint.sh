@@ -48,6 +48,13 @@ setup_user() {
 
     if id opencode > /dev/null 2>&1; then
         usermod -s /bin/zsh opencode
+        # Unlock the account so sshd allows pubkey login.
+        # useradd sets the password field to '!' (locked) by default, which
+        # causes OpenSSH to reject the user with "account is locked".
+        # Setting the password to '*' removes the lock while keeping the
+        # account safe — '*' is not a valid password hash, so password
+        # login remains impossible.
+        usermod -p '*' opencode
     fi
 }
 
