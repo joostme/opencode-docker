@@ -13,7 +13,7 @@ This setup is meant for people who want a browser-based AI coding agent and VS C
 - Persistent OpenCode data, toolchains, and VS Code extensions
 - Prewired MCP config for Context7 and Playwright
 - Traefik-ready HTTPS routing for separate subdomains
-- SSH key mounting for private Git access
+- SSH key mounting for private Git access and inbound SSH login via `authorized_keys`
 - Preconfigured safeguards that block OpenCode from reading common secret files
 
 ## Before you start
@@ -62,7 +62,7 @@ After startup:
 | `OPENCODE_DOMAIN` | Domain for OpenCode |
 | `CODE_SERVER_DOMAIN` | Domain for code-server |
 | `CERT_RESOLVER` | Traefik certificate resolver |
-| `SSH_KEY_PATH` | Host path to SSH keys |
+| `SSH_KEY_PATH` | Host path to SSH keys; if `authorized_keys` exists there it is used for inbound SSH login |
 | `GH_TOKEN` / `GITHUB_TOKEN` | Optional token for GitHub CLI and API access |
 
 See `.env.example` for the full list.
@@ -81,6 +81,8 @@ GitHub CLI auth also persists under `./config` when you log in with `gh auth log
 - This setup is intended for personal use, not multi-tenant hosting
 - OpenCode is configured to deny reads for files such as `.env`, SSH keys, `*.pem`, and `*.key`
 - SSH keys are mounted read-only and copied into the container at startup with the correct permissions
+- If `authorized_keys` exists in the mounted SSH directory, the container uses it for inbound SSH access on port `22`
+- SSH password authentication is disabled and root login is disabled
 - Playwright MCP runs as a separate internal service and is only exposed on the private Compose network by default
 - If both `OPENCODE_SERVER_PASSWORD` and `CODE_SERVER_PASSWORD` are empty, code-server can run without auth
 
@@ -106,7 +108,7 @@ ports:
 ## Troubleshooting
 
 - Permission errors on mounted folders: set `PUID` and `PGID` to match your host user
-- SSH access not working: verify `SSH_KEY_PATH` and confirm the files are readable by that user
+- SSH access not working: verify `SSH_KEY_PATH`, confirm an `authorized_keys` file exists there, and make sure the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container

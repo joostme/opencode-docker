@@ -13,6 +13,7 @@ CONFIG_DIR="${HOME_DIR}/.config"
 ZSH_CONFIG_DIR="${CONFIG_DIR}/zsh"
 OH_MY_ZSH_DIR="${CONFIG_DIR}/oh-my-zsh"
 RUN_AS="${PUID}:${PGID}"
+SSHD_PID=""
 
 # ---------------------------------------------------------------------------
 # User & group setup
@@ -129,10 +130,52 @@ SSHEOF
 
     # Fix permissions
     chmod 700 "${HOME_DIR}/.ssh"
-    chmod 600 "${HOME_DIR}/.ssh/config"     2>/dev/null || true
-    chmod 600 "${HOME_DIR}/.ssh/id_"*       2>/dev/null || true
-    chmod 644 "${HOME_DIR}/.ssh/"*.pub      2>/dev/null || true
-    chmod 644 "${HOME_DIR}/.ssh/known_hosts" 2>/dev/null || true
+    chmod 600 "${HOME_DIR}/.ssh/config"          2>/dev/null || true
+    chmod 600 "${HOME_DIR}/.ssh/authorized_keys" 2>/dev/null || true
+    chmod 600 "${HOME_DIR}/.ssh/id_"*            2>/dev/null || true
+    chmod 644 "${HOME_DIR}/.ssh/"*.pub           2>/dev/null || true
+    chmod 644 "${HOME_DIR}/.ssh/known_hosts"     2>/dev/null || true
+}
+
+# ---------------------------------------------------------------------------
+# SSH server
+# ---------------------------------------------------------------------------
+setup_sshd() {
+    mkdir -p /run/sshd
+
+    if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+        ssh-keygen -A
+    fi
+
+    cat > /etc/ssh/sshd_config <<SSHEOF
+Port 22
+Protocol 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+PubkeyAuthentication yes
+AuthorizedKeysFile ${HOME_DIR}/.ssh/authorized_keys
+PermitEmptyPasswords no
+X11Forwarding no
+PrintMotd no
+Subsystem sftp /usr/lib/openssh/sftp-server
+PidFile /run/sshd.pid
+SSHEOF
+}
+
+start_sshd() {
+    if [ ! -f "${HOME_DIR}/.ssh/authorized_keys" ]; then
+        echo "Warning: ${HOME_DIR}/.ssh/authorized_keys not found; sshd will start without any authorized keys."
+    fi
+
+    echo "Starting sshd on port 22 (root login disabled, password auth disabled)..."
+    /usr/sbin/sshd -D -e &
+    SSHD_PID=$!
 }
 
 # ---------------------------------------------------------------------------
@@ -357,6 +400,7 @@ start_opencode() {
 # ---------------------------------------------------------------------------
 cleanup() {
     echo "Shutting down..."
+    kill "$SSHD_PID" 2>/dev/null
     kill "$CODE_SERVER_PID" 2>/dev/null
     kill "$OPENCODE_PID" 2>/dev/null
     wait
@@ -373,6 +417,7 @@ echo "  code-server port=${CODE_SERVER_PORT}"
 setup_user
 mkdir -p /repos
 setup_ssh
+setup_sshd
 setup_shell_env
 setup_code_server_settings
 fix_ownership
@@ -382,6 +427,7 @@ setup_mise
 
 trap cleanup SIGTERM SIGINT
 
+start_sshd
 start_code_server
 start_opencode
 

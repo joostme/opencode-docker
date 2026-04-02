@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gzip \
     jq \
     openssh-client \
+    openssh-server \
     ripgrep \
     tar \
     unzip \
@@ -85,7 +86,7 @@ RUN chmod +x /entrypoint.sh
 # ---------------------------------------------------------------------------
 # 8. Metadata
 # ---------------------------------------------------------------------------
-EXPOSE 4096 8080
+EXPOSE 22 4096 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD if [ -n "${OPENCODE_SERVER_PASSWORD}" ]; then \
