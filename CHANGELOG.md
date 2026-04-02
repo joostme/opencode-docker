@@ -1,5 +1,11 @@
 # opencode-docker
 
+## 2.3.1
+
+### Patch Changes
+
+- 0e71d22: Fix SSH login failing with "account is locked" by setting the opencode user's password field to `*` instead of the default `!` that `useradd` sets.
+
 ## 2.3.0
 
 ### Minor Changes
