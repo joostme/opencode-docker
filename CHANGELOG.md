@@ -1,5 +1,14 @@
 # opencode-docker
 
+## 2.3.2
+
+### Patch Changes
+
+- 9f1c623: Update the Docker image to include the latest Dockerfile changes, including the added build-essential package.
+- 2f6cb81: Update the bundled code-server in the Docker image to v4.115.0.
+- fd31763: Update the bundled GitHub CLI in the Docker image to v2.89.0.
+- 87186da: Update the bundled OpenCode binary in the Docker image to v1.4.0.
+
 ## 2.3.1
 
 ### Patch Changes
