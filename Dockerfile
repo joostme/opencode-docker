@@ -12,6 +12,7 @@ ARG OPENCODE_VERSION
 # Core runtime tools + CLI utilities commonly used by agents and developers
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
+    build-essential \
     ca-certificates \
     curl \
     git \
