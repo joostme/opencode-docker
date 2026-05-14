@@ -49,7 +49,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # 4. code-server (own layer — version changes independently)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=coder/code-server
-ARG CODE_SERVER_VERSION=4.116.0
+ARG CODE_SERVER_VERSION=4.118.0
 RUN ARCH=$(dpkg --print-architecture) && \
     URL="https://github.com/coder/code-server/releases/download/v${CODE_SERVER_VERSION}/code-server_${CODE_SERVER_VERSION}_${ARCH}.deb" && \
     echo "Downloading code-server v${CODE_SERVER_VERSION} from ${URL}" && \
