@@ -1,5 +1,5 @@
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=1.14.50
+ARG OPENCODE_VERSION=1.16.0
 
 FROM debian:bookworm-slim
 
