@@ -118,5 +118,6 @@ ports:
 ## Upstream updates
 
 - `Dockerfile` pins `GH_VERSION`, `CODE_SERVER_VERSION`, and `OPENCODE_VERSION`, so image builds stay reproducible instead of silently pulling `latest`
+- `.github/workflows/dependency-refresh.yml` checks upstream releases weekly and opens a PR when any pinned version changes
 - `renovate.json` teaches Renovate to watch `cli/cli`, `coder/code-server`, and `anomalyco/opencode` releases and open PRs when any pinned version can be bumped
 - Enable the Renovate app or runner for this repository to start receiving update PRs automatically

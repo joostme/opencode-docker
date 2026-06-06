@@ -1,0 +1,55 @@
+name: Dependency Refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependency-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install release dependencies
+        run: npm ci
+
+      - name: Configure Git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync pinned upstream versions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/sync-upstream-dependencies.mjs
+
+      - name: Create pull request for dependency refresh
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(deps): refresh bundled upstream versions"
+          title: "chore(deps): refresh bundled upstream versions"
+          body: |
+            ## Summary
+            - refresh the pinned OpenCode, code-server, and GitHub CLI versions in the Docker image when upstream releases change
+            - add matching changesets so the existing release workflow can publish a new image after merge
+          branch: chore/dependency-refresh
+          delete-branch: true
