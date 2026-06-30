@@ -1,5 +1,17 @@
 # opencode-docker
 
+## 2.3.7
+
+### Patch Changes
+
+- ff8acb1: Add a scheduled GitHub Actions workflow that refreshes pinned upstream versions.
+
+  The repo now checks for new OpenCode, code-server, and GitHub CLI releases on a daily schedule, opens a dependency bump PR with matching changesets, and lets the existing release workflow publish a fresh image after merge.
+
+- 73b01bb: chore(deps): update code-server to v4.126.0
+- 73b01bb: chore(deps): update github cli to v2.95.0
+- 73b01bb: chore(deps): update opencode to v1.17.11
+
 ## 2.3.6
 
 ### Patch Changes
