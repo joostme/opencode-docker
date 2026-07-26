@@ -1,5 +1,13 @@
 # opencode-docker
 
+## 2.3.8
+
+### Patch Changes
+
+- 743ed7a: chore(deps): update code-server to v4.129.0
+- 743ed7a: chore(deps): update github cli to v2.96.0
+- 743ed7a: chore(deps): update opencode to v1.18.3
+
 ## 2.3.7
 
 ### Patch Changes
