@@ -9,7 +9,7 @@
     "release": "node scripts/create-github-release.mjs"
   },
   "devDependencies": {
-    "@changesets/changelog-git": "^0.2.1",
+    "@changesets/changelog-git": "^1.0.0",
     "@changesets/cli": "^2.29.7"
   }
 }
