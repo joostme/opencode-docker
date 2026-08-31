@@ -1,5 +1,5 @@
 # renovate: datasource=github-releases depName=anomalyco/opencode
-ARG OPENCODE_VERSION=1.18.15
+ARG OPENCODE_VERSION=1.18.25
 
 FROM debian:bookworm-slim
 
@@ -36,7 +36,7 @@ RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 # 3. GitHub CLI (own layer — version changes independently)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=cli/cli
-ARG GH_VERSION=2.97.0
+ARG GH_VERSION=2.98.0
 RUN ARCH=$(dpkg --print-architecture) && \
     URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${ARCH}.deb" && \
     echo "Downloading GitHub CLI v${GH_VERSION} from ${URL}" && \
@@ -49,7 +49,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # 4. code-server (own layer — version changes independently)
 # ---------------------------------------------------------------------------
 # renovate: datasource=github-releases depName=coder/code-server
-ARG CODE_SERVER_VERSION=4.131.0
+ARG CODE_SERVER_VERSION=4.135.0
 RUN ARCH=$(dpkg --print-architecture) && \
     URL="https://github.com/coder/code-server/releases/download/v${CODE_SERVER_VERSION}/code-server_${CODE_SERVER_VERSION}_${ARCH}.deb" && \
     echo "Downloading code-server v${CODE_SERVER_VERSION} from ${URL}" && \
