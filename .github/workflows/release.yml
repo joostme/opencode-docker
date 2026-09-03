@@ -33,7 +33,7 @@ jobs:
 
       - name: Create release PR or publish release
         id: changesets
-        uses: changesets/action@v2.0.0
+        uses: changesets/action@v2.1.1
         with:
           version-script: npm run version-packages
           commit-message: "chore: release"
