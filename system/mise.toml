@@ -1,0 +1,9 @@
+# System-level mise config baked into the image (/etc/mise/config.toml).
+# entrypoint.sh installs/upgrades these on every container start, so they
+# always track the newest upstream release. Nothing is baked into the image.
+# Your own tools live in ~/.config/mise/config.toml and are merged on top.
+
+[tools]
+opencode = "latest"
+gh = "latest"
+"github:coder/code-server" = "latest"

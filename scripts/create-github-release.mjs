@@ -13,6 +13,8 @@ if (!repository || !sha) {
 }
 
 const image = `ghcr.io/${repository.toLowerCase()}`;
+const prerelease = version.includes("-");
+const channel = prerelease ? version.split("-")[1].split(".")[0] : null;
 
 function setOutput(name, value) {
   if (!githubOutput) {
@@ -70,7 +72,7 @@ const releaseNotes = [
   changelogNotes,
   "## Container Image",
   `- \`${image}:${version}\``,
-  `- \`${image}:latest\``
+  prerelease ? `- \`${image}:${channel}\`` : `- \`${image}:latest\``
 ]
   .filter(Boolean)
   .join("\n\n");
@@ -88,7 +90,8 @@ execFileSync(
     "--notes-file",
     "release-notes.md",
     "--target",
-    sha
+    sha,
+    ...(prerelease ? ["--prerelease"] : [])
   ],
   { stdio: "inherit" }
 );

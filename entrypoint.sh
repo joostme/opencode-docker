@@ -207,6 +207,10 @@ setup_mise() {
     now=$(date +%s)
     local stale=true
 
+    if [ "${AUTO_UPDATE:-true}" != "true" ]; then
+        stale=false
+    fi
+
     if [ -f "${stamp}" ]; then
         local last
         last=$(cat "${stamp}" 2>/dev/null || echo 0)
@@ -226,16 +230,22 @@ setup_mise() {
         fi
     fi
 
-    # mise self-update runs as root and may create ~/.cache owned by root.
-    # Fix ownership so the unprivileged user can write to it later.
-    chown_tree_if_exists "${HOME_DIR}/.cache"
+    # mise self-update runs as root and may create ~/.cache and ~/.local/state
+    # owned by root. Fix ownership so the unprivileged user can write to them.
+    chown_tree_if_exists "${HOME_DIR}/.cache" "${HOME_DIR}/.local/state"
 
-    # Install user-defined toolchains (Node, Python, etc.) from mise config
-    if [ -f "${HOME_DIR}/.config/mise/config.toml" ]; then
-        echo "Installing mise tools from config..."
-        gosu "${RUN_AS}" mise install --yes 2>&1
-        echo "Mise tools installed."
+    # Install tools from the system config (opencode, gh, code-server) and the
+    # user's mise config (Node, Python, etc.). The image ships none of them, so
+    # a failed install is fatal. Then upgrade everything that is tracked by a
+    # floating version ("latest", "22", ...); a failed upgrade is not fatal
+    # because the previously installed versions in ~/.local/share/mise still work.
+    echo "Installing mise tools from config..."
+    gosu "${RUN_AS}" mise install --yes 2>&1
+    if [ "${AUTO_UPDATE:-true}" = "true" ]; then
+        echo "Upgrading mise tools..."
+        gosu "${RUN_AS}" mise upgrade --yes 2>&1 || echo "Warning: mise upgrade failed, continuing with installed versions."
     fi
+    echo "Mise tools ready."
 
     # Add mise shims to PATH so opencode's bash tool can find installed runtimes
     MISE_SHIMS="${HOME_DIR}/.local/share/mise/shims"
