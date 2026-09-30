@@ -2,7 +2,7 @@
 "opencode-docker": major
 ---
 
-Rebuild the image without any bundled binaries. OpenCode, GitHub CLI, and code-server are now installed by mise on first container start and upgraded on every start (together with mise itself and user toolchains). The first start requires network access.
+Rebuild the image without any bundled binaries. OpenCode, GitHub CLI, and code-server are now installed by mise on first container start and upgraded on every start (together with mise itself and user toolchains). The first start requires network access. A plain container restart (`docker compose restart opencode`) now updates everything automatically; pulling a new image is only needed for changes to the image itself.
 
 Breaking changes:
 
