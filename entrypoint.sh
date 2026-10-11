@@ -58,14 +58,6 @@ setup_user() {
     fi
 }
 
-chown_tree_if_exists() {
-    for path in "$@"; do
-        if [ -e "${path}" ]; then
-            chown -R "${PUID}:${PGID}" "${path}"
-        fi
-    done
-}
-
 chown_path_if_dir() {
     for path in "$@"; do
         if [ -d "${path}" ]; then
@@ -219,10 +211,12 @@ setup_mise() {
         fi
     fi
 
-    # Update the mise binary itself (runs as root because mise lives in /usr/local/bin)
+    # Update the mise binary itself (runs as root because mise lives in /usr/local/bin).
+    # Keep its state out of the user's home so root-owned dirs under
+    # ~/.local/share/mise do not break the installs below.
     if [ "${stale}" = true ]; then
         echo "Checking for mise updates..."
-        if mise self-update --yes 2>&1; then
+        if HOME=/root mise self-update --yes 2>&1; then
             echo "${now}" > "${stamp}"
             echo "mise is up to date: $(mise --version)"
         else
@@ -230,9 +224,9 @@ setup_mise() {
         fi
     fi
 
-    # mise self-update runs as root and may create ~/.cache and ~/.local/state
-    # owned by root. Fix ownership so the unprivileged user can write to them.
-    chown_tree_if_exists "${HOME_DIR}/.cache" "${HOME_DIR}/.local/state"
+    # Heal root-owned leftovers from earlier runs in persisted volumes.
+    find "${HOME_DIR}/.local" "${HOME_DIR}/.cache" ! -user "${PUID}" \
+        -exec chown -h "${PUID}:${PGID}" {} + 2>/dev/null || true
 
     # Install tools from the system config (opencode, gh, code-server) and the
     # user's mise config (Node, Python, etc.). The image ships none of them, so
