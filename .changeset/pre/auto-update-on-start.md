@@ -10,5 +10,5 @@ Breaking changes:
 
 Pinning and opting out:
 
-- To pin versions, add them to `config/mise/config.toml`, e.g. `opencode = "1.18.33"`, `gh = "2.101.0"`, `"github:coder/code-server" = "4.139.1"`. Entries there override the image default of `latest`.
+- To pin versions, add them to your mise config at `./config/mise/config.toml` next to `docker-compose.yml` (`/home/opencode/.config/mise/config.toml` in the container), e.g. `opencode = "1.18.33"`, `gh = "2.101.0"`, `"github:coder/code-server" = "4.139.1"`. Entries there override the image default of `latest`.
 - To disable all upgrades (including mise itself and floating toolchains), set `AUTO_UPDATE=false`. Missing tools are still installed on start.
