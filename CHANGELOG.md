@@ -1,5 +1,26 @@
 # opencode-docker
 
+## 3.0.0
+
+### Major Changes
+
+- 0bef5fb: Rebuild the image without any bundled binaries. OpenCode, GitHub CLI, and code-server are now installed by mise on first container start and upgraded on every start (together with mise itself and user toolchains). The first start requires network access. A plain container restart (`docker compose restart opencode`) now updates everything automatically; pulling a new image is only needed for changes to the image itself.
+  
+  Breaking changes:
+  
+  - The image no longer pins or bundles OpenCode, GitHub CLI, or code-server; the pinned-version Dockerfile args, the dependency-refresh workflow, and the related Renovate rules are removed, so image releases no longer track upstream versions.
+  
+  Pinning and opting out:
+  
+  - To pin versions, add them to your mise config at `./config/mise/config.toml` next to `docker-compose.yml` (`/home/opencode/.config/mise/config.toml` in the container), e.g. `opencode = "1.18.33"`, `gh = "2.101.0"`, `"github:coder/code-server" = "4.139.1"`. Entries there override the image default of `latest`.
+  - To disable all upgrades (including mise itself and floating toolchains), set `AUTO_UPDATE=false`. Missing tools are still installed on start.
+
+### Patch Changes
+
+- 9b4a8ef: Put the mise shims of the `opencode` user on the image `PATH`, so `docker exec -u opencode opencode gh ...` finds OpenCode, GitHub CLI, and code-server again. Since 3.0.0-beta.0 they were only on the `PATH` of login and interactive shells, and `docker exec` failed with `executable file not found in $PATH`.
+- 60502da: Commands that OpenCode runs now get the `[env]` variables from your mise config. They run in a non-interactive shell (`zsh -c`), which never loaded them before, so variables like API keys or project settings were missing for agent commands. The container now evaluates `mise env` on every shell start (`~/.config/zsh/.zshenv`, `~/.zshenv`, and `BASH_ENV` for `bash -c`). Changes to the mise config apply without a restart, and the mise config of the current project is honoured.
+- 8bf3214: Fix the first container start failing with "Permission denied" while installing OpenCode, GitHub CLI, and code-server. `mise self-update` ran as root with the user's home and left root-owned directories under `~/.local/share/mise`; it now runs with `HOME=/root`, and root-owned leftovers in persisted volumes are handed back to the user before installing.
+
 ## 3.0.0-beta.2
 
 ### Patch Changes
