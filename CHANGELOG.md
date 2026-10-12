@@ -1,5 +1,12 @@
 # opencode-docker
 
+## 3.0.0-beta.2
+
+### Patch Changes
+
+- 9b4a8ef: Put the mise shims of the `opencode` user on the image `PATH`, so `docker exec -u opencode opencode gh ...` finds OpenCode, GitHub CLI, and code-server again. Since 3.0.0-beta.0 they were only on the `PATH` of login and interactive shells, and `docker exec` failed with `executable file not found in $PATH`.
+- 60502da: Commands that OpenCode runs now get the `[env]` variables from your mise config. They run in a non-interactive shell (`zsh -c`), which never loaded them before, so variables like API keys or project settings were missing for agent commands. The container now evaluates `mise env` on every shell start (`~/.config/zsh/.zshenv`, `~/.zshenv`, and `BASH_ENV` for `bash -c`). Changes to the mise config apply without a restart, and the mise config of the current project is honoured.
+
 ## 3.0.0-beta.1
 
 ### Patch Changes
