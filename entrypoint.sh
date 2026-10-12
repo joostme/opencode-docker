@@ -11,6 +11,7 @@ CODE_SERVER_PORT=${CODE_SERVER_PORT:-8080}
 HOME_DIR="/home/opencode"
 CONFIG_DIR="${HOME_DIR}/.config"
 ZSH_CONFIG_DIR="${CONFIG_DIR}/zsh"
+BASH_ENV_FILE="${HOME_DIR}/.bash_env"
 OH_MY_ZSH_DIR="${CONFIG_DIR}/oh-my-zsh"
 RUN_AS="${PUID}:${PGID}"
 SSHD_PID=""
@@ -317,6 +318,21 @@ EOF
     append_file_block_if_missing "${HOME_DIR}/.zshenv" "${zsh_env_marker}" "${zshenv_block}"
     append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zprofile" "${marker}" "${zprofile_block}"
     append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zshrc" "${zsh_marker}" "${zshrc_block}"
+
+    # `mise activate` only exports the [env] vars of the mise config at an
+    # interactive prompt, and shims only set them for their own tool.
+    # Commands that OpenCode runs (`$SHELL -c`) never get a prompt, so load
+    # the vars on every shell start. zsh reads $ZDOTDIR/.zshenv when ZDOTDIR is
+    # preset (opencode serve, code-server) and ~/.zshenv otherwise (SSH);
+    # non-interactive bash reads $BASH_ENV (see start_opencode). This also
+    # picks up mise config changes without a restart and honours the mise
+    # config of the current directory.
+    local mise_env_zsh mise_env_bash
+    mise_env_zsh=$(printf '%s\n%s' "${marker}" 'eval "$(mise env -s zsh 2>/dev/null)"')
+    mise_env_bash=$(printf '%s\n%s' "${marker}" 'eval "$(mise env -s bash 2>/dev/null)"')
+    append_file_block_if_missing "${HOME_DIR}/.zshenv" "${marker}" "${mise_env_zsh}"
+    append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zshenv" "${marker}" "${mise_env_zsh}"
+    append_file_block_if_missing "${BASH_ENV_FILE}" "${marker}" "${mise_env_bash}"
 }
 
 # ---------------------------------------------------------------------------
@@ -376,6 +392,7 @@ start_code_server() {
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
+        BASH_ENV="${BASH_ENV_FILE}" \
         ZDOTDIR="${ZSH_CONFIG_DIR}" \
         ZSH="${OH_MY_ZSH_DIR}" \
         PASSWORD="${cs_password}" \
@@ -398,6 +415,7 @@ start_opencode() {
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
         SHELL="/bin/zsh" \
+        BASH_ENV="${BASH_ENV_FILE}" \
         ZDOTDIR="${ZSH_CONFIG_DIR}" \
         ZSH="${OH_MY_ZSH_DIR}" \
         opencode serve \
