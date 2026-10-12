@@ -111,7 +111,7 @@ ports:
 - SSH access not working: verify `SSH_KEY_PATH`, confirm an `authorized_keys` file exists there, and make sure the files are readable by that user
 - code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
-- Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
+- Toolchains reinstalling or changing: check your mise config (`./config/mise/config.toml` on the host) and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
 - OpenCode page still tries to reach the internet: restart the container so mise upgrades OpenCode to the current release
 
@@ -120,7 +120,7 @@ ports:
 The image contains only system packages and mise. OpenCode, GitHub CLI, and code-server are not baked in; mise installs them on container start and keeps them current:
 
 - They are declared as `latest` in the image's system config (`system/mise.toml` -> `/etc/mise/config.toml`)
-- Tools in your own `config/mise/config.toml` (Node, Python, ...) are upgraded within their declared version range (e.g. `node = "22"` follows 22.x)
+- Tools in your own mise config (Node, Python, ...; see [Pinning versions](#pinning-versions-or-disabling-auto-updates) for where it lives) are upgraded within their declared version range (e.g. `node = "22"` follows 22.x)
 - mise itself is self-updated (at most once per 24h)
 - Downloads are cached in `./share`, so restarts without new releases are fast
 - The **first start needs network access** and downloads ~300 MB; the container will not start if the initial install fails. Later starts continue with the cached versions if an upgrade fails
@@ -130,7 +130,12 @@ The image contains only system packages and mise. OpenCode, GitHub CLI, and code
 
 ### Pinning versions or disabling auto-updates
 
-If you do not want the latest releases, pin them in `config/mise/config.toml` (your entry takes precedence over the image default of `latest`):
+If you do not want the latest releases, pin them in your own mise config (your entry takes precedence over the image default of `latest`). It lives in the `./config` volume:
+
+- On the host: `./config/mise/config.toml`, next to your `docker-compose.yml` (create it if it does not exist)
+- In the container: `/home/opencode/.config/mise/config.toml`
+
+Add the versions under `[tools]`:
 
 ```toml
 [tools]
@@ -138,6 +143,8 @@ opencode = "1.18.33"
 gh = "2.101.0"
 "github:coder/code-server" = "4.139.1"
 ```
+
+Alternatively, run `docker exec -u opencode opencode mise use -g opencode@1.18.33` on the host; it writes the same file. Run it as the `opencode` user, otherwise it ends up in root's config and has no effect.
 
 Pinned exact versions are never upgraded. Loose versions like `opencode = "1.18"` follow patch releases only. To stop all upgrades, including mise itself and floating toolchains such as `node = "22"`, set `AUTO_UPDATE=false` in your `.env`. Missing tools are still installed on start.
 
