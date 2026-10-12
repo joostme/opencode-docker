@@ -11,6 +11,7 @@ CODE_SERVER_PORT=${CODE_SERVER_PORT:-8080}
 HOME_DIR="/home/opencode"
 CONFIG_DIR="${HOME_DIR}/.config"
 ZSH_CONFIG_DIR="${CONFIG_DIR}/zsh"
+BASH_ENV_FILE="${HOME_DIR}/.bash_env"
 OH_MY_ZSH_DIR="${CONFIG_DIR}/oh-my-zsh"
 RUN_AS="${PUID}:${PGID}"
 SSHD_PID=""
@@ -56,14 +57,6 @@ setup_user() {
         # login remains impossible.
         usermod -p '*' opencode
     fi
-}
-
-chown_tree_if_exists() {
-    for path in "$@"; do
-        if [ -e "${path}" ]; then
-            chown -R "${PUID}:${PGID}" "${path}"
-        fi
-    done
 }
 
 chown_path_if_dir() {
@@ -207,6 +200,10 @@ setup_mise() {
     now=$(date +%s)
     local stale=true
 
+    if [ "${AUTO_UPDATE:-true}" != "true" ]; then
+        stale=false
+    fi
+
     if [ -f "${stamp}" ]; then
         local last
         last=$(cat "${stamp}" 2>/dev/null || echo 0)
@@ -215,10 +212,12 @@ setup_mise() {
         fi
     fi
 
-    # Update the mise binary itself (runs as root because mise lives in /usr/local/bin)
+    # Update the mise binary itself (runs as root because mise lives in /usr/local/bin).
+    # Keep its state out of the user's home so root-owned dirs under
+    # ~/.local/share/mise do not break the installs below.
     if [ "${stale}" = true ]; then
         echo "Checking for mise updates..."
-        if mise self-update --yes 2>&1; then
+        if HOME=/root mise self-update --yes 2>&1; then
             echo "${now}" > "${stamp}"
             echo "mise is up to date: $(mise --version)"
         else
@@ -226,16 +225,22 @@ setup_mise() {
         fi
     fi
 
-    # mise self-update runs as root and may create ~/.cache owned by root.
-    # Fix ownership so the unprivileged user can write to it later.
-    chown_tree_if_exists "${HOME_DIR}/.cache"
+    # Heal root-owned leftovers from earlier runs in persisted volumes.
+    find "${HOME_DIR}/.local" "${HOME_DIR}/.cache" ! -user "${PUID}" \
+        -exec chown -h "${PUID}:${PGID}" {} + 2>/dev/null || true
 
-    # Install user-defined toolchains (Node, Python, etc.) from mise config
-    if [ -f "${HOME_DIR}/.config/mise/config.toml" ]; then
-        echo "Installing mise tools from config..."
-        gosu "${RUN_AS}" mise install --yes 2>&1
-        echo "Mise tools installed."
+    # Install tools from the system config (opencode, gh, code-server) and the
+    # user's mise config (Node, Python, etc.). The image ships none of them, so
+    # a failed install is fatal. Then upgrade everything that is tracked by a
+    # floating version ("latest", "22", ...); a failed upgrade is not fatal
+    # because the previously installed versions in ~/.local/share/mise still work.
+    echo "Installing mise tools from config..."
+    gosu "${RUN_AS}" mise install --yes 2>&1
+    if [ "${AUTO_UPDATE:-true}" = "true" ]; then
+        echo "Upgrading mise tools..."
+        gosu "${RUN_AS}" mise upgrade --yes 2>&1 || echo "Warning: mise upgrade failed, continuing with installed versions."
     fi
+    echo "Mise tools ready."
 
     # Add mise shims to PATH so opencode's bash tool can find installed runtimes
     MISE_SHIMS="${HOME_DIR}/.local/share/mise/shims"
@@ -313,6 +318,21 @@ EOF
     append_file_block_if_missing "${HOME_DIR}/.zshenv" "${zsh_env_marker}" "${zshenv_block}"
     append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zprofile" "${marker}" "${zprofile_block}"
     append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zshrc" "${zsh_marker}" "${zshrc_block}"
+
+    # `mise activate` only exports the [env] vars of the mise config at an
+    # interactive prompt, and shims only set them for their own tool.
+    # Commands that OpenCode runs (`$SHELL -c`) never get a prompt, so load
+    # the vars on every shell start. zsh reads $ZDOTDIR/.zshenv when ZDOTDIR is
+    # preset (opencode serve, code-server) and ~/.zshenv otherwise (SSH);
+    # non-interactive bash reads $BASH_ENV (see start_opencode). This also
+    # picks up mise config changes without a restart and honours the mise
+    # config of the current directory.
+    local mise_env_zsh mise_env_bash
+    mise_env_zsh=$(printf '%s\n%s' "${marker}" 'eval "$(mise env -s zsh 2>/dev/null)"')
+    mise_env_bash=$(printf '%s\n%s' "${marker}" 'eval "$(mise env -s bash 2>/dev/null)"')
+    append_file_block_if_missing "${HOME_DIR}/.zshenv" "${marker}" "${mise_env_zsh}"
+    append_file_block_if_missing "${ZSH_CONFIG_DIR}/.zshenv" "${marker}" "${mise_env_zsh}"
+    append_file_block_if_missing "${BASH_ENV_FILE}" "${marker}" "${mise_env_bash}"
 }
 
 # ---------------------------------------------------------------------------
@@ -372,6 +392,7 @@ start_code_server() {
     gosu "${RUN_AS}" env \
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
+        BASH_ENV="${BASH_ENV_FILE}" \
         ZDOTDIR="${ZSH_CONFIG_DIR}" \
         ZSH="${OH_MY_ZSH_DIR}" \
         PASSWORD="${cs_password}" \
@@ -394,6 +415,7 @@ start_opencode() {
         HOME="${HOME_DIR}" \
         PATH="${PATH}" \
         SHELL="/bin/zsh" \
+        BASH_ENV="${BASH_ENV_FILE}" \
         ZDOTDIR="${ZSH_CONFIG_DIR}" \
         ZSH="${OH_MY_ZSH_DIR}" \
         opencode serve \

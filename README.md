@@ -6,7 +6,7 @@ This setup is meant for people who want a browser-based AI coding agent and VS C
 
 ## What you get
 
-- OpenCode web UI served directly by the bundled `opencode` binary and code-server from one container
+- OpenCode web UI served directly by the `opencode` binary and code-server from one container
 - Playwright MCP sidecar for browser automation from the agent
 - GitHub CLI available in the container for `gh` commands
 - Shared `/repos` workspace between both apps
@@ -113,11 +113,32 @@ ports:
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check `config/mise/config.toml` and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
-- OpenCode page still tries to reach the internet: rebuild the image and make sure the current OpenCode release binary is installed
+- OpenCode page still tries to reach the internet: restart the container so mise upgrades OpenCode to the current release
 
-## Upstream updates
+## Automatic updates on start
 
-- `Dockerfile` pins `GH_VERSION`, `CODE_SERVER_VERSION`, and `OPENCODE_VERSION`, so image builds stay reproducible instead of silently pulling `latest`
-- `.github/workflows/dependency-refresh.yml` checks upstream releases weekly and opens a PR when any pinned version changes
-- `renovate.json` teaches Renovate to watch `cli/cli`, `coder/code-server`, and `anomalyco/opencode` releases and open PRs when any pinned version can be bumped
-- Enable the Renovate app or runner for this repository to start receiving update PRs automatically
+The image contains only system packages and mise. OpenCode, GitHub CLI, and code-server are not baked in; mise installs them on container start and keeps them current:
+
+- They are declared as `latest` in the image's system config (`system/mise.toml` -> `/etc/mise/config.toml`)
+- Tools in your own `config/mise/config.toml` (Node, Python, ...) are upgraded within their declared version range (e.g. `node = "22"` follows 22.x)
+- mise itself is self-updated (at most once per 24h)
+- Downloads are cached in `./share`, so restarts without new releases are fast
+- The **first start needs network access** and downloads ~300 MB; the container will not start if the initial install fails. Later starts continue with the cached versions if an upgrade fails
+- New releases are picked up after mise's 24h release-age delay
+- Set `AUTO_UPDATE=false` to skip upgrades and only install missing tools
+- Set `GITHUB_TOKEN` to avoid GitHub API rate limits when resolving releases
+
+### Pinning versions or disabling auto-updates
+
+If you do not want the latest releases, pin them in `config/mise/config.toml` (your entry takes precedence over the image default of `latest`):
+
+```toml
+[tools]
+opencode = "1.18.33"
+gh = "2.101.0"
+"github:coder/code-server" = "4.139.1"
+```
+
+Pinned exact versions are never upgraded. Loose versions like `opencode = "1.18"` follow patch releases only. To stop all upgrades, including mise itself and floating toolchains such as `node = "22"`, set `AUTO_UPDATE=false` in your `.env`. Missing tools are still installed on start.
+
+A plain `docker compose restart opencode` updates everything. You only need to pull a new image for changes to the image itself (system packages, entrypoint).

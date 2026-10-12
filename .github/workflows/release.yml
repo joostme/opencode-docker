@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - beta
 
 permissions:
   contents: write
@@ -51,25 +52,36 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
 
       - name: Export release metadata
-        if: steps.github_release.outputs.created == 'true'
+        if: steps.github_release.outputs.build == 'true'
         run: |
           VERSION="${{ steps.github_release.outputs.version }}"
           IMAGE_NAME="${{ steps.github_release.outputs.image }}"
-          VERSION_MINOR=${VERSION%.*}
+          if [[ "$VERSION" == *-* ]]; then
+            # Pre-release (e.g. 3.0.0-beta.0): tag version and channel only, never latest
+            CHANNEL="${VERSION#*-}"
+            CHANNEL="${CHANNEL%%.*}"
+            TAGS="${IMAGE_NAME}:${VERSION}"$'\n'"${IMAGE_NAME}:${CHANNEL}"
+          else
+            VERSION_MINOR=${VERSION%.*}
+            TAGS="${IMAGE_NAME}:${VERSION}"$'\n'"${IMAGE_NAME}:${VERSION_MINOR}"$'\n'"${IMAGE_NAME}:latest"
+          fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "VERSION_MINOR=$VERSION_MINOR" >> "$GITHUB_ENV"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> "$GITHUB_ENV"
+          {
+            echo "IMAGE_TAGS<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
-        if: steps.github_release.outputs.created == 'true'
+        if: steps.github_release.outputs.build == 'true'
         uses: docker/setup-buildx-action@v4
 
       - name: Set up QEMU
-        if: steps.github_release.outputs.created == 'true'
+        if: steps.github_release.outputs.build == 'true'
         uses: docker/setup-qemu-action@v4
 
       - name: Log in to GHCR
-        if: steps.github_release.outputs.created == 'true'
+        if: steps.github_release.outputs.build == 'true'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -77,17 +89,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        if: steps.github_release.outputs.created == 'true'
+        if: steps.github_release.outputs.build == 'true'
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-            ${{ env.IMAGE_NAME }}:${{ env.VERSION_MINOR }}
-            ${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.IMAGE_TAGS }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ env.VERSION }}
