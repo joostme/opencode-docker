@@ -24,7 +24,7 @@ function setOutput(name, value) {
   appendFileSync(githubOutput, `${name}=${value}\n`);
 }
 
-setOutput("created", "false");
+setOutput("build", "false");
 setOutput("version", version);
 setOutput("tag", tag);
 setOutput("image", image);
@@ -62,8 +62,31 @@ function releaseExists() {
   }
 }
 
+async function imageExists() {
+  const name = image.replace(/^ghcr\.io\//, "");
+  const credentials = Buffer.from(`token:${process.env.GITHUB_TOKEN}`).toString("base64");
+  const tokenResponse = await fetch(`https://ghcr.io/token?scope=repository:${name}:pull`, {
+    headers: { Authorization: `Basic ${credentials}` }
+  });
+  const { token } = await tokenResponse.json();
+  const response = await fetch(`https://ghcr.io/v2/${name}/manifests/${version}`, {
+    method: "HEAD",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json"
+    }
+  });
+  return response.ok;
+}
+
 if (releaseExists()) {
-  console.log(`Release ${tag} already exists, skipping`);
+  // A failed or re-run job can leave a release without its image, so build it then.
+  if (await imageExists()) {
+    console.log(`Release ${tag} and image ${image}:${version} already exist, skipping`);
+  } else {
+    console.log(`Release ${tag} exists but image ${image}:${version} is missing, building it`);
+    setOutput("build", "true");
+  }
   process.exit(0);
 }
 
@@ -96,4 +119,4 @@ execFileSync(
   { stdio: "inherit" }
 );
 
-setOutput("created", "true");
+setOutput("build", "true");
