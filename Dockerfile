@@ -42,6 +42,10 @@ ENV PUID=1000 \
     CODE_SERVER_PORT=8080 \
     AUTO_UPDATE=true
 
+# mise shims of the opencode user, so `docker exec -u opencode` finds
+# opencode, gh and code-server without a login shell
+ENV PATH="/home/opencode/.local/share/mise/shims:${PATH}"
+
 # ---------------------------------------------------------------------------
 # 5. Entrypoint (changes most often during development)
 # ---------------------------------------------------------------------------
