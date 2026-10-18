@@ -54,8 +54,7 @@ After startup:
 
 | Variable | What it does |
 |---|---|
-| `OPENCODE_SERVER_PASSWORD` | Required password for the OpenCode web UI |
-| `OPENCODE_SERVER_USERNAME` | Username for the OpenCode web UI |
+| `OPENCODE_SERVER_PASSWORD` | Required password for the OpenCode web UI (username is always `opencode`); the container does not start without it |
 | `CODE_SERVER_PASSWORD` | Optional separate password for code-server |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` | LLM provider credentials |
 | `PUID` / `PGID` | Match container permissions to your host user |
@@ -84,7 +83,7 @@ GitHub CLI auth also persists under `./config` when you log in with `gh auth log
 - If `authorized_keys` exists in the mounted SSH directory, the container uses it for inbound SSH access on port `22`
 - SSH password authentication is disabled and root login is disabled
 - Playwright MCP runs as a separate internal service and is only exposed on the private Compose network by default
-- If both `OPENCODE_SERVER_PASSWORD` and `CODE_SERVER_PASSWORD` are empty, code-server can run without auth
+- code-server uses `CODE_SERVER_PASSWORD`, or `OPENCODE_SERVER_PASSWORD` if that is empty
 
 ## Browser automation
 
@@ -105,11 +104,22 @@ ports:
 
 `4096` serves both the OpenCode API and the web UI directly from the `opencode` process.
 
+## Terminal UI
+
+To use the OpenCode terminal UI instead of the browser, attach it to the running server:
+
+```bash
+docker exec -it -u opencode opencode opencode --server http://localhost:4096
+```
+
+Without `--server`, OpenCode 2 starts its own background service instead of using the server of the container. The password is taken from `OPENCODE_SERVER_PASSWORD` in the container environment.
+
 ## Troubleshooting
 
 - Permission errors on mounted folders: set `PUID` and `PGID` to match your host user
 - SSH access not working: verify `SSH_KEY_PATH`, confirm an `authorized_keys` file exists there, and make sure the files are readable by that user
-- code-server auth issue: set `OPENCODE_SERVER_PASSWORD` even if you leave `CODE_SERVER_PASSWORD` empty
+- Container exits right after start with "OPENCODE_SERVER_PASSWORD is not set": set it in `.env`
+- Container restarts while installing OpenCode with an npm error: OpenCode 2 is installed from npm and needs Node. The image installs `node = "lts"`; if your own mise config sets `node`, keep it at a version that is still installable
 - Browser actions failing unexpectedly: check `docker compose logs playwright-mcp` and confirm the sidecar is healthy
 - Toolchains reinstalling or changing: check your mise config (`./config/mise/config.toml` on the host) and restart the container
 - GitHub CLI not authenticated: set `GH_TOKEN` or `GITHUB_TOKEN`, or run `gh auth login` in the container
@@ -119,7 +129,7 @@ ports:
 
 The image contains only system packages and mise. OpenCode, GitHub CLI, and code-server are not baked in; mise installs them on container start and keeps them current:
 
-- They are declared as `latest` in the image's system config (`system/mise.toml` -> `/etc/mise/config.toml`)
+- They are declared as `latest` in the image's system config (`system/mise.toml` -> `/etc/mise/config.toml`), together with Node LTS, which mise needs to install OpenCode 2 from npm
 - Tools in your own mise config (Node, Python, ...; see [Pinning versions](#pinning-versions-or-disabling-auto-updates) for where it lives) are upgraded within their declared version range (e.g. `node = "22"` follows 22.x)
 - mise itself is self-updated (at most once per 24h)
 - Downloads are cached in `./share`, so restarts without new releases are fast
@@ -145,6 +155,8 @@ gh = "2.101.0"
 ```
 
 Alternatively, run `docker exec -u opencode opencode mise use -g opencode@1.18.33` on the host; it writes the same file. Run it as the `opencode` user, otherwise it ends up in root's config and has no effect.
+
+To stay on OpenCode 1, set `opencode = "1"`; it follows the 1.x releases.
 
 Pinned exact versions are never upgraded. Loose versions like `opencode = "1.18"` follow patch releases only. To stop all upgrades, including mise itself and floating toolchains such as `node = "22"`, set `AUTO_UPDATE=false` in your `.env`. Missing tools are still installed on start.
 

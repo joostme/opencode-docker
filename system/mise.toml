@@ -4,6 +4,9 @@
 # Your own tools live in ~/.config/mise/config.toml and are merged on top.
 
 [tools]
+# OpenCode 2 ships as the npm package @opencode/cli, so mise needs Node/npm
+# to install it. A node entry in your own mise config takes precedence.
+node = "lts"
 opencode = "latest"
 gh = "latest"
 "github:coder/code-server" = "latest"

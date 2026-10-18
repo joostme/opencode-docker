@@ -57,13 +57,16 @@ RUN chmod +x /entrypoint.sh
 # ---------------------------------------------------------------------------
 EXPOSE 22 4096 8080
 
+# OpenCode 2 reports readiness on /api/info (basic auth, user is always
+# "opencode"). Its /health only serves the web UI and is always 200, so it is
+# asked only when /api/info does not exist (installs pinned to OpenCode 1).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
-    CMD if [ -n "${OPENCODE_SERVER_PASSWORD}" ]; then \
-            curl -sf -u "${OPENCODE_SERVER_USERNAME:-opencode}:${OPENCODE_SERVER_PASSWORD}" \
-                http://localhost:${OPENCODE_PORT:-4096}/health; \
-        else \
-            curl -sf http://localhost:${OPENCODE_PORT:-4096}/health; \
-        fi || exit 1
+    CMD auth="opencode:${OPENCODE_PASSWORD:-${OPENCODE_SERVER_PASSWORD}}"; \
+        url="http://localhost:${OPENCODE_PORT:-4096}"; \
+        code=$(curl -s -o /dev/null -w '%{http_code}' -u "${auth}" "${url}/api/info"); \
+        [ "${code}" = 200 ] \
+            || { [ "${code}" = 404 ] && curl -sf -o /dev/null -u "${auth}" "${url}/health"; } \
+            || exit 1
 
 WORKDIR /repos
 

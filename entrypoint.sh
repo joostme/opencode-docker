@@ -384,7 +384,7 @@ setup_code_server_settings() {
 # ---------------------------------------------------------------------------
 start_code_server() {
     # Resolve password: reuse OpenCode password if not set separately
-    local cs_password="${CODE_SERVER_PASSWORD:-${OPENCODE_SERVER_PASSWORD:-}}"
+    local cs_password="${CODE_SERVER_PASSWORD:-${OPENCODE_PASSWORD:-${OPENCODE_SERVER_PASSWORD:-}}}"
     local cs_auth="none"
     [ -n "${cs_password}" ] && cs_auth="password"
 
@@ -442,6 +442,13 @@ echo "Starting opencode-docker"
 echo "  PUID=${PUID} PGID=${PGID}"
 echo "  OpenCode port=${OPENCODE_PORT}"
 echo "  code-server port=${CODE_SERVER_PORT}"
+
+# OpenCode 2 always requires auth and would otherwise pick a random password
+# that only shows up in the logs.
+if [ -z "${OPENCODE_PASSWORD:-${OPENCODE_SERVER_PASSWORD:-}}" ]; then
+    echo "Error: OPENCODE_SERVER_PASSWORD is not set. OpenCode requires a server password." >&2
+    exit 1
+fi
 
 setup_user
 mkdir -p /repos
